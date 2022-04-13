@@ -11,6 +11,7 @@
 | Version | Description | Date |
 | - | - | - |
 | 1.0.0   | Initial release | 2022/03/30  |
+| 1.1.0   |Added permissions to shared mailboxes as entitlements | 2022/04/13  |
 
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
