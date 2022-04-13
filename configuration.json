@@ -1,0 +1,47 @@
+[
+    {
+        "key": "ConnectionUri",
+        "type": "input",
+        "defaultValue": "",
+        "templateOptions": {
+            "label": "Connection Uri",
+            "placeholder": "http://<ServerFQDN>/PowerShell/",
+            "description": "The connection uri of the on-prem Exchange",
+            "required": true
+        }
+    },
+    {
+        "key": "Username",
+        "type": "input",
+        "defaultValue": "",
+        "templateOptions": {
+            "label": "Username",
+            "placeholder": "admin@enyoi.onmicrosoft.com",
+            "description": "The username of the service account in Exchange",
+            "required": true
+        }
+    },
+    {
+        "key": "Password",
+        "type": "input",
+        "defaultValue": "",
+        "templateOptions": {
+            "label": "Password",
+            "type": "password",
+            "placeholder": "P@ssw0rd1!",
+            "description": "The password of the service account in Exchange",
+            "required": true
+        }
+    },
+    {
+        "key": "AuthenticationMethod",
+        "type": "input",
+        "defaultValue": "Default",
+        "templateOptions": {
+            "label": "Authentication method",
+            "placeholder": "Default",
+            "description": "The authentication method that is used to authenticate the user's credentials",
+            "required": true
+        }
+    }
+]
