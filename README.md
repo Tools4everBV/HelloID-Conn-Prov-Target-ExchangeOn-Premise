@@ -16,12 +16,10 @@
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 - [Table of Contents](#table-of-contents)
+- [Requirements](#requirements)
 - [Introduction](#introduction)
-- [Getting the Azure AD graph API access](#getting-the-azure-ad-graph-api-access)
-  - [Application Registration](#application-registration)
-  - [Configuring App Permissions](#configuring-app-permissions)
-  - [Authentication and Authorization](#authentication-and-authorization)
-  - [Connection settings](#connection-settings)
+- [Configuring Exchange](#configuring-exchange-management-shell)
+- [Connection settings](#connection-settings)
 - [Getting help](#getting-help)
 - [HelloID Docs](#helloid-docs)
 
@@ -39,7 +37,7 @@ For this connector we have the option to correlate to existing Exchange On-Premi
 If you want to create Exchange On-Premise users, please use the **built-in Microsoft Active Directory target system** and make use of the **Exchange Integration**.
 
 <!-- GETTING STARTED -->
-## Installing the Microsoft Exchange Online PowerShell V2 module
+## Configuring Exchange Management Shell
 By using this connector you will have the ability to manage groupmemberships.
 Since we use the cmdlets from the Exchange Management Shell, it is required to Enable-PsRemoting on the Exchange Server, allow Windows Authentication for the IIS site and assign permissions to the service account.
 For more information, please check out the [Microsoft docs](https://docs.microsoft.com/en-us/powershell/exchange/control-remote-powershell-access-to-exchange-servers?view=exchange-ps).
