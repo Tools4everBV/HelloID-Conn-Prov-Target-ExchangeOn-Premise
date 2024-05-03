@@ -1,27 +1,51 @@
-| :information_source: Information |
-|:---------------------------|
-| This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements.       |
-<br />
+# HelloID-Conn-Prov-Target-Exchange Server On Premises
+> [!IMPORTANT]
+> This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements.
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/69046642/160915847-b8a72368-931c-45d1-8f93-9cc7bb974ca8.png">
 </p>
 
-## Versioning
-| Version | Description | Date |
-| - | - | - |
-| 1.0.0   | Initial release | 2022/03/30  |
-| 1.1.0   |Added permissions to shared mailboxes as entitlements | 2022/04/13  |
-
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 - [Table of Contents](#table-of-contents)
-- [Requirements](#requirements)
 - [Introduction](#introduction)
-- [Configuring Exchange](#configuring-exchange-management-shell)
-- [Connection settings](#connection-settings)
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)  
+  - [Provisioning PowerShell V2 connector](#provisioning-powershell-v2-connector)
+    - [Correlation configuration](#correlation-configuration)
+    - [Field mapping](#field-mapping)
+    - [Configuring Exchange](#configuring-exchange-management-shell)
+    - [Connection settings](#connection-settings)
 - [Getting help](#getting-help)
 - [HelloID Docs](#helloid-docs)
+
+## Introduction
+
+_HelloID-Conn-Prov-Target-Exchange Server On Premises_ is a _target_ connector. _Exchange Server On Premises_ provides  the option to correlate to existing Exchange On-Premise users and provision groupmemberships and sharedmailbox permissions.
+  >__Only Exchange groups are supported, if the group can be managed via AD, we advise to do so__
+
+If you want to create Exchange On-Premise users, please use the **built-in Microsoft Active Directory target system** and make use of the **Exchange Integration**.
+
+The following lifecycle actions are available:
+
+
+| Action                 | Description                                      |
+| ---------------------- | ------------------------------------------------ |
+| create.ps1             | PowerShell _create_ lifecycle action             |
+| permissions/groups/grantPermission.ps1    | PowerShell _grant_ lifecycle action              |
+| permissions/groups/revokePermission.ps1   | PowerShell _revoke_ lifecycle action             |
+| permissions/groups/permissions.ps1        | PowerShell _permissions_ lifecycle action        |
+| permissions/sharedmailboxes/grantPermission.ps1    | PowerShell _grant_ lifecycle action              |
+| permissions/sharedmailboxes/revokePermission.ps1   | PowerShell _revoke_ lifecycle action             |
+| permissions/sharedmailboxes/permissions.ps1        | PowerShell _permissions_ lifecycle action        |
+| permissions/dynamicpermissions/dynamicpermissions.ps1   | PowerShell _grant_, _update_ & _revoke_ lifecycle action             |
+| permissions/dynamicpermissions/permissions.ps1    | PowerShell _permissions_ lifecycle action              |
+| resources/groups.ps1          | PowerShell _resources_ lifecycle action          |
+| resources/sharedmailboxes.ps1          | PowerShell _resources_ lifecycle action          |
+| configuration.json     | Default _configuration.json_ |
+| fieldMapping.json      | Default _fieldMapping.json_   |
+| postAdAction.create.DisableExchangeActiveSync_OWA.ps1 | Post-AD-action used in builtin AD-connector _create_ lifecycle action |
 
 ## Requirements
 - Execute the cmdlet **Enable-PsRemoting** on the **Exchange server** to which you want to connect.
@@ -30,19 +54,39 @@
 - Required to run **On-Premises**.
 - **Concurrent sessions** in HelloID set to a **maximum of 1**! If this is any higher than 1, this may cause errors, since Exchange only support a maximum of 3 sessions per minute.
 
-## Introduction
-For this connector we have the option to correlate to existing Exchange On-Premise users and provision groupmemberships.
-  >__Only Exchange groups are supported, if the group can be managed via AD, we advise to do so__
+## Getting started
 
-If you want to create Exchange On-Premise users, please use the **built-in Microsoft Active Directory target system** and make use of the **Exchange Integration**.
+### Provisioning PowerShell V2 connector
 
-<!-- GETTING STARTED -->
-## Configuring Exchange Management Shell
+#### Correlation configuration
+
+The correlation configuration is used to specify which properties will be used to match an existing account within _Exchange Server On Premises_ to a person in _HelloID_.
+
+To properly setup the correlation:
+
+1. Open the `Correlation` tab.
+
+2. Specify the following configuration:
+
+    | Setting                   | Value                             |
+    | ------------------------- | --------------------------------- |
+    | Enable correlation        | `True`                            |
+    | Person correlation field  | `PersonContext.Person.UserName` |
+    | Account correlation field | `Account.UserPrincipalName`                                |
+
+> [!TIP]
+> _For more information on correlation, please refer to our correlation [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems/correlation.html) pages_.
+
+#### Field mapping
+
+The field mapping can be imported by using the _fieldMapping.json_ file.
+
+#### Configuring Exchange Management Shell
 By using this connector you will have the ability to manage groupmemberships.
 Since we use the cmdlets from the Exchange Management Shell, it is required to Enable-PsRemoting on the Exchange Server, allow Windows Authentication for the IIS site and assign permissions to the service account.
 For more information, please check out the [Microsoft docs](https://docs.microsoft.com/en-us/powershell/exchange/control-remote-powershell-access-to-exchange-servers?view=exchange-ps).
 
-### Connection settings
+#### Connection settings
 The following settings are required to connect.
 
 | Setting     | Description |

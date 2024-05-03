@@ -1,13 +1,11 @@
-##############################################################
-# HelloID-Conn-Prov-Target-Exchange-OnPremise-Create-Correlate
-#
-# Version: 2.0.0
-##############################################################
+############################################################################
+# HelloID-Conn-Prov-Target-Exchange-Server-On-Premises-GrantPermission-Group
+# PowerShell V2
+############################################################################
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
-# Set to false at start, at the end, only when no error occurs it is set to true
-$outputContext.Success = $false
+$outputContext.Success = $true
 
 # Set debug logging
 switch ($($actionContext.Configuration.config.isDebug)) {
@@ -15,14 +13,13 @@ switch ($($actionContext.Configuration.config.isDebug)) {
     $false { $VerbosePreference = 'SilentlyContinue' }
 }
 
-
-#Exchange
+#Exchange configuration
 $ConnectionUri = $actionContext.Configuration.exchange.ConnectionUri
 $Username = $actionContext.Configuration.exchange.username
 $Password = $actionContext.Configuration.exchange.password
 $AuthenticationMethod = $actionContext.Configuration.exchange.authenticationmode
 
-#region Supporting Functions
+#region functions
 function Set-PSSession {    
     [OutputType([System.Management.Automation.Runspaces.PSSession])]  
     param(       
@@ -62,63 +59,41 @@ function Set-PSSession {
     }
     Write-Output $sessionObject
 }
+#endregion
 
-function Get-ErrorMessage {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory,
-            ValueFromPipeline
-        )]
-        [object]$ErrorObject
-    )
-    process {
-        $errorMessage = [PSCustomObject]@{
-            VerboseErrorMessage = $null
-            AuditErrorMessage   = $null
-        }
-
-        $errorMessage.VerboseErrorMessage = $ErrorObject.Exception.Message
-        $errorMessage.AuditErrorMessage = $ErrorObject.Exception.Message
-
-        Write-Output $errorMessage
-    }
-}
-#endregion Supporting Functions
-
-# Check if we should try to correlate the account
-# Get current AD account
+# Begin
 try {
-    if ($actionContext.CorrelationConfiguration.Enabled) {
-        $correlationProperty = $actionContext.CorrelationConfiguration.accountField
-        $correlationValue = $actionContext.CorrelationConfiguration.accountFieldValue
-    
-        if ([string]::IsNullOrEmpty($correlationProperty)) {
-            Write-Warning "Correlation is enabled but not configured correctly."
-            throw "Correlation is enabled but not configured correctly."
-        }
-    
-        if ([string]::IsNullOrEmpty($correlationValue)) {
-            Write-Warning "The correlation value for [$correlationProperty] is empty. This is likely a scripting issue."
-            throw "The correlation value for [$correlationProperty] is empty. This is likely a scripting issue."
-        }
+    # Verify if [accountReference] has a value
+    if ([string]::IsNullOrEmpty($($actionContext.References.Account))) {
+        throw "The account reference for Exchange Server On Premises for person [$($personContext.Person.DisplayName)] could not be found"        
     }
-    else {
-        Write-Warning "Correlation is enabled but not configured correctly."
-        throw "Configuration of correlation is madatory."
+    
+    if (![string]::IsNullOrEmpty($($actionContext.References.Account))) {        
+        $dryRunMessage = "Grant Exchange Server On Premises permission [$($actionContext.References.Permission.DisplayName)] will be executed during enforcement"
     }
 
-    try {
+    # Add a message and the result of each of the validations showing what will happen during enforcement
+    if ($actionContext.DryRun -eq $true) {        
+        $outputContext.AuditLogs.Add([PSCustomObject]@{
+                Message = "[DryRun] $dryRunMessage"
+                Action  = "GrantPermission"
+                IsError = $false
+            })  
+    }
+
+    # Process
+    if (-not($actionContext.DryRun -eq $true)) {
+        
         $remoteSession = Set-PSSession -PSSessionName 'HelloID_Prov_Exchange'
-        Connect-PSSession $remoteSession | out-null                                                                            
+        Connect-PSSession $remoteSession | out-null 
 
-        # if it does not exist create new session to exchange in remote session     
         $createSessionResult = Invoke-Command -Session $remoteSession -ScriptBlock {
             # Create array for logging since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands
             $verboseLogs = [System.Collections.ArrayList]::new()
             $informationLogs = [System.Collections.ArrayList]::new()
             $warningLogs = [System.Collections.ArrayList]::new()
             $errorLogs = [System.Collections.ArrayList]::new()
-    
+
             # Check if Exchange Connection already exists
             try {
                 $null = Get-User -ResultSize 1 -ErrorAction Stop | Out-Null
@@ -129,17 +104,17 @@ try {
                     $connectedToExchange = $false
                 }
             }
-            
+        
             # Connect to Exchange
-            try {                        
+            try {
                 if ($connectedToExchange -eq $false) {
                     $connectionUri = $using:ConnectionUri
                     $authenticationMethod = $using:AuthenticationMethod
                     $password = $using:Password
                     $username = $using:Username
-    
+
                     [Void]$verboseLogs.Add("Connecting to Exchange: $connectionUri..")
-    
+
                     # Connect to Exchange in an unattended scripting scenario using user credentials (MFA not supported).
                     $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
                     $credential = [System.Management.Automation.PSCredential]::new($username, $securePassword)
@@ -162,22 +137,20 @@ try {
                 [Void]$warningLogs.Add($errorMessage)
                 throw "Could not connect to Exchange, error: $_"
             }
-            finally {                        
+            finally {
                 $returnobject = @{
                     verboseLogs     = $verboseLogs
                     informationLogs = $informationLogs
                     warningLogs     = $warningLogs
                     errorLogs       = $errorLogs
                 }
-                Remove-Variable ("verboseLogs", "informationLogs", "warningLogs", "errorLogs")                             
-                Write-Output $returnobject
-                        
+                Remove-Variable ("verboseLogs", "informationLogs", "warningLogs", "errorLogs")     
+                Write-Output $returnobject 
             }
         }
-                
         # Log the data from logging arrarys (since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands)
         $verboseLogs = $createSessionResult.verboseLogs
-        foreach ($verboseLog in $verboseLogs) { Write-Verbose $verboseLog }
+        foreach ($verboseLog in $verboseLogs) { Write-Verbose -Verbose $verboseLog }
         $informationLogs = $createSessionResult.informationLogs
         foreach ($informationLog in $informationLogs) { Write-Information $informationLog }
         $warningLogs = $createSessionResult.warningLogs
@@ -185,10 +158,13 @@ try {
         $errorLogs = $createSessionResult.errorLogs
         foreach ($errorLog in $errorLogs) { Write-Warning $errorLog }
 
-        # Get Exchange User
-        $getExchangeUser = Invoke-Command -Session $remoteSession -ScriptBlock {
-            try {                
-                $account = $using:outputContext.Data
+        Write-Information "Granting Exchange Server On Premises permission: [$($actionContext.References.Permission.DisplayName)] - [$($actionContext.References.Permission.Reference)]"
+        # Make sure to test with special characters and if needed; add utf8 encoding.
+        # Grant Exchange Groupmembership
+        $addExchangeGroupMembership = Invoke-Command -Session $remoteSession -ScriptBlock {
+            try {
+                $account = $using:actionContext.References.Account
+                $permission = $using:actionContext.References.Permission
 
                 $success = $false
                 $auditLogs = [Collections.Generic.List[PSCustomObject]]::new()
@@ -199,34 +175,63 @@ try {
                 $warningLogs = [System.Collections.ArrayList]::new()
                 $errorLogs = [System.Collections.ArrayList]::new()
 
-                if ([string]::IsNullOrEmpty($account.userPrincipalName)) { throw "No UserPrincipalName provided" }  
-            
-                [Void]$verboseLogs.Add("Identity: $($account.userPrincipalName)")
-                $user = Get-User -Identity $account.userPrincipalName -ErrorAction Stop
+                [Void]$verboseLogs.Add("Granting permission $($permission.DisplayName) ($($permission.Reference)) to $($account.UserPrincipalName) ($($account.Guid))")
+                $null = Add-DistributionGroupMember -Identity $permission.Reference -Member $account.Guid -BypassSecurityGroupManagerCheck:$true -Confirm:$false -ErrorAction Stop
+                [Void]$informationLogs.Add("Successfully granted permission $($permission.DisplayName) ($($permission.Reference)) to $($account.UserPrincipalName) ($($account.Guid))")
 
-                if ($user -eq $null) { throw "Failed to return a user" }
-
-                $aRef = @{
-                    Guid              = $user.Guid
-                    UserPrincipalName = $user.UserPrincipalName
-                }
-
-                [Void]$informationLogs.Add("Account correlated to $($aRef.userPrincipalName) ($($aRef.Guid))")
-
-                $success = $true;
+                $success = $true
                 $auditLogs.Add([PSCustomObject]@{
-                        Action  = "CreateAccount"
-                        Message = "Account correlated to $($aRef.userPrincipalName) ($($aRef.Guid))";
-                        IsError = $false;
-                    });
+                        Action  = "GrantPermission"
+                        Message = "Successfully granted permission $($permission.DisplayName) ($($permission.Reference)) to $($account.UserPrincipalName) ($($account.Guid))"
+                        IsError = $false
+                    }
+                )      
             }
-            catch { 
-                throw $_
+            catch {
+                if ($_ -like "*already present in the collection*") {
+                    [Void]$warningLogs.Add("The recipient $($account.UserPrincipalName) ($($account.Guid)) is already a member of the group $($permission.DisplayName) ($($permission.Reference))")
+                    $success = $true
+                    $auditLogs.Add([PSCustomObject]@{
+                            Action  = "GrantPermission"
+                            Message = "Successfully granted permission $($permission.DisplayName) ($($permission.Reference)) to $($account.UserPrincipalName) ($($account.Guid))"
+                            IsError = $false
+                        }
+                    )
+                }
+                elseif ($_ -like "*object '$($permission.Reference)' couldn't be found*") {
+                    [Void]$warningLogs.Add("Group $($permission.DisplayName) ($($permission.Reference)) couldn't be found. Possibly no longer exists. Skipping action")
+                    $success = $true
+                    $auditLogs.Add([PSCustomObject]@{
+                            Action  = "GrantPermission"
+                            Message = "Successfully granted permission $($permission.DisplayName) ($($permission.Reference)) to $($account.UserPrincipalName) ($($account.Guid))"
+                            IsError = $false
+                        }
+                    )
+                }
+                elseif ($_ -like "*Couldn't find object ""$($account.Guid)""*") {
+                    [Void]$warningLogs.Add("User $($account.UserPrincipalName) ($($account.Guid)) couldn't be found. Possibly no longer exists. Skipping action")
+                    $success = $true
+                    $auditLogs.Add([PSCustomObject]@{
+                            Action  = "GrantPermission"
+                            Message = "Successfully granted permission $($permission.DisplayName) ($($permission.Reference)) to $($account.UserPrincipalName) ($($account.Guid))"
+                            IsError = $false
+                        }
+                    )
+                }
+                else {
+                    # Log error for further analysis.  Contact Tools4ever Support to further troubleshoot
+                    [Void]$warningLogs.Add("Error granting permission $($permission.DisplayName) ($($permission.Reference)) to $($account.UserPrincipalName) ($($account.Guid)). Error: $_")
+                    $success = $false
+                    $auditLogs.Add([PSCustomObject]@{
+                            Action  = "GrantPermission"
+                            Message = "Failed to grant permission $($permission.DisplayName) ($($permission.Reference)) to $($account.UserPrincipalName) ($($account.Guid))"
+                            IsError = $true
+                        }
+                    )
+                }
             }
             finally {
                 $returnobject = @{
-                    user            = $user
-                    aRef            = $aRef
                     success         = $success
                     auditLogs       = $auditLogs
                     verboseLogs     = $verboseLogs
@@ -234,89 +239,50 @@ try {
                     warningLogs     = $warningLogs
                     errorLogs       = $errorLogs
                 }
-                Remove-Variable ("account", "user", "success", "auditLogs", "verboseLogs", "informationLogs", "warningLogs", "errorLogs")     
+                Remove-Variable ("account", "permission", "success", "auditLogs", "verboseLogs", "informationLogs", "warningLogs", "errorLogs") 
                 Write-Output $returnobject 
             }
         }
-        $aRef = $getExchangeUser.aRef
-        $success = $getExchangeUser.success
-        $auditLogs = $getExchangeUser.auditLogs
+        $success = $addExchangeGroupMembership.success
+        $auditLogs = $addExchangeGroupMembership.auditLogs
 
         # Log the data from logging arrarys (since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands)
-        $verboseLogs = $getExchangeUser.verboseLogs
-        foreach ($verboseLog in $verboseLogs) { Write-Verbose $verboseLog }
-        $informationLogs = $getExchangeUser.informationLogs
+        $verboseLogs = $addExchangeGroupMembership.verboseLogs
+        foreach ($verboseLog in $verboseLogs) { Write-Verbose -Verbose $verboseLog }
+        $informationLogs = $addExchangeGroupMembership.informationLogs
         foreach ($informationLog in $informationLogs) { Write-Information $informationLog }
-        $warningLogs = $getExchangeUser.warningLogs
+        $warningLogs = $addExchangeGroupMembership.warningLogs
         foreach ($warningLog in $warningLogs) { Write-Warning $warningLog }
-        $errorLogs = $getExchangeUser.errorLogs
+        $errorLogs = $addExchangeGroupMembership.errorLogs
         foreach ($errorLog in $errorLogs) { Write-Warning $errorLog }
 
         foreach ($auditlog in $auditLogs) { 
             $outputContext.AuditLogs.Add($auditlog)                
         }
     }
-    catch {
-        $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "CreateAccount"
-                Message = "Account failed to correlate:  $_"
-                IsError = $True
-            });    
-        Write-Warning $_;
-    }
-
-    $outputContext.AccountReference = $getExchangeUser.aRef
-    $actionContext.Data.exchGuid = $getExchangeUser.aRef.Guid
-    
-
-    $outputContext.AuditLogs.Add([PSCustomObject]@{
-            Action  = "CreateAccount"
-            Message = "Successfully correlated to mailuser $($outputContext.Data.userPrincipalName) ($($outputContext.Data.employeeNumber))"
-            IsError = $false
-        })
 }
 catch {
-    # Clean up error variables
-    $verboseErrorMessage = $null
-    $auditErrorMessage = $null
-
+    $outputContext.success = $false
     $ex = $PSItem
-    if ( $($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorObject = Resolve-HTTPError -Error $ex
-
-        $verboseErrorMessage = $errorObject.ErrorMessage
-
-        $auditErrorMessage = Resolve-MicrosoftGraphAPIErrorMessage -ErrorObject $errorObject.ErrorMessage
+    if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
+        $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
+        $errorObj = Resolve-Exchange Server On PremisesError -ErrorObject $ex
+        $auditMessage = "Could not grant Exchange Server On Premises permission. Error: $($errorObj.FriendlyMessage)"
+        Write-Warning "Error at Line '$($errorObj.ScriptLineNumber)': $($errorObj.Line). Error: $($errorObj.ErrorDetails)"
     }
-
-    # If error message empty, fall back on $ex.Exception.Message
-    if ([String]::IsNullOrEmpty($verboseErrorMessage)) {
-        $verboseErrorMessage = $ex.Exception.Message
+    else {
+        $auditMessage = "Could not grant Exchange Server On Premises permission. Error: $($_.Exception.Message)"
+        Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
     }
-    if ([String]::IsNullOrEmpty($auditErrorMessage)) {
-        $auditErrorMessage = $ex.Exception.Message
-    }
-
-    Write-Verbose "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($verboseErrorMessage)"
-
     $outputContext.AuditLogs.Add([PSCustomObject]@{
-            Action  = "CreateAccount"
-            Message = "Error querying mailuser [$correlationValue]. Error Message: $auditErrorMessage"
-            IsError = $True
+            Message = $auditMessage
+            Action  = "GrantPermission"
+            IsError = $true
         })
 }
-finally {
+finally { 
     if ($null -ne $remoteSession) {           
         Disconnect-PSSession $remoteSession -WarningAction SilentlyContinue | out-null   # Suppress Warning: PSSession Connection was created using the EnableNetworkAccess parameter and can only be reconnected from the local computer. # to fix the warning the session must be created with a elevated prompt
-        Write-Verbose "Remote Powershell Session '$($remoteSession.Name)' State: '$($remoteSession.State)' Availability: '$($remoteSession.Availability)'"
-    } 
-    
-    # Check if auditLogs contains errors, if no errors are found, set success to true
-    if (-NOT($outputContext.AuditLogs.IsError -contains $true)) {
-        $outputContext.Success = $true
-    }
-    
-    $outputContext.Data = $actionContext.Data
+        Write-Verbose -Verbose "Remote Powershell Session '$($remoteSession.Name)' State: '$($remoteSession.State)' Availability: '$($remoteSession.Availability)'"
+    }      
 }
-
-

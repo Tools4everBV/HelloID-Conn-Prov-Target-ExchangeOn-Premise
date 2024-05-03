@@ -1,4 +1,7 @@
-$c = $configuration | ConvertFrom-Json
+##################################################################################
+# HelloID-Conn-Prov-Target-Exchange-Server-On-Premises-Permissions-SharedMailboxes
+# PowerShell V2
+##################################################################################
 
 # Set TLS to accept TLS, TLS 1.1 and TLS 1.2
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls -bor [Net.SecurityProtocolType]::Tls11 -bor [Net.SecurityProtocolType]::Tls12
@@ -8,31 +11,14 @@ $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
 # Used to connect to Exchange using user credentials (MFA not supported).
-$ConnectionUri = $c.ConnectionUri
-$Username = $c.Username
-$Password = $c.Password
-$AuthenticationMethod = $c.AuthenticationMethod
+$ConnectionUri = $actionContext.Configuration.exchange.ConnectionUri
+$Username = $actionContext.Configuration.exchange.username
+$Password = $actionContext.Configuration.exchange.password
+$AuthenticationMethod = $actionContext.Configuration.exchange.authenticationmode
 
 #region functions
 # Write functions logic here
-function Set-PSSession {
-    <#
-    .SYNOPSIS
-        Get or create a "remote" Powershell session
-    .DESCRIPTION
-        Get or create a "remote" Powershell session at the local computer
-    .EXAMPLE
-        PS C:\> $remoteSession = Set-PSSession -PSSessionName ($psSessionName + $mutex.Number) # Test1
-       Get or Create a "remote" Powershell session at the local computer with computername and number: Test1 And assign to a $varaible which can be used to make remote calls.
-    .OUTPUTS
-        $remoteSession [System.Management.Automation.Runspaces.PSSession]
-    .NOTES
-        Make sure you always disconnect the PSSession, otherwise the PSSession is blocked to reconnect. 
-        Place the following code in the finally block to make sure the session will be disconnected
-        if ($null -ne $remoteSession) {  
-            Disconnect-PSSession $remoteSession 
-        }
-    #>
+function Set-PSSession {    
     [OutputType([System.Management.Automation.Runspaces.PSSession])]  
     param(       
         [Parameter(mandatory)]
@@ -85,7 +71,7 @@ try {
 
         # Check if Exchange Connection already exists
         try{
-            $checkCmd = Get-User -ResultSize 1 -ErrorAction Stop | Out-Null
+            $null = Get-User -ResultSize 1 -ErrorAction Stop | Out-Null
             $connectedToExchange = $true
         }catch{
             if($_.Exception.Message -like "The term 'Get-User' is not recognized as the name of a cmdlet, function, script file, or operable program.*"){
@@ -106,7 +92,7 @@ try {
                 # Connect to Exchange in an unattended scripting scenario using user credentials (MFA not supported).
                 $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
                 $credential = [System.Management.Automation.PSCredential]::new($username, $securePassword)
-                $sessionOption = New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck -IdleTimeout (New-TimeSpan -Minutes 5).TotalMilliseconds # The session does not time out while the session is active. Please enter this value to time out the Exchangesession when the session is removed
+                $sessionOption = New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck -IdleTimeout (New-TimeSpan -Minutes 5).TotalMilliseconds # The session does not time out while the session is active. Please enter this value to time out the EXOsession when the session is removed
                 $exchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $credential -Authentication $authenticationMethod -AllowRedirection -SessionOption $sessionOption -EnableNetworkAccess:$false -ErrorAction Stop
                 $null = Import-PSSession $exchangeSession
                 [Void]$informationLogs.Add("Successfully connected to Exchange: $connectionUri")
@@ -144,8 +130,8 @@ try {
     $errorLogs = $createSessionResult.errorLogs
     foreach($errorLog in $errorLogs){ Write-Warning $errorLog }
 
-    # Get Exchange groups
-    $getExchangeGroups = Invoke-Command -Session $remoteSession -ScriptBlock {
+    # Get Exchange Shared Mailboxes
+    $getExoMailboxes = Invoke-Command -Session $remoteSession -ScriptBlock {
         try{
             # Create array for logging since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands
             $verboseLogs = [System.Collections.ArrayList]::new()
@@ -153,38 +139,37 @@ try {
             $warningLogs = [System.Collections.ArrayList]::new()
             $errorLogs = [System.Collections.ArrayList]::new()
 
-            [Void]$verboseLogs.Add("Searching for Exchange groups..")
-            # Only get Exchange Groups (Mail-enabled Security Group of Distribution Group)
-            # Do not get all groups using "Get-Group", since we cannot manage Security Groups (they have to be managed from Microsoft AD) 
-            $groups = Get-DistributionGroup -ResultSize Unlimited
-            [Void]$informationLogs.Add("Finished searching for Exchange Groups. Found [$($groups.id.Count) groups]")
+            [Void]$verboseLogs.Add("Searching for Exchange Shared Mailboxes..")
+            # Only get Exchange Shared Mailboxes (can be changed easily to get all mailboxes)
+            $mailboxes = Get-Mailbox -RecipientTypeDetails SharedMailbox -resultSize unlimited
+            [Void]$informationLogs.Add("Finished searching for Exchange Shared Mailboxes. Found [$($mailboxes.id.Count) Shared Mailboxes]")
         } catch {
-            throw "Could not gather Exchange groups. Error: $_"
+            throw "Could not gather Exchange Shared Mailboxes. Error: $_"
         } finally {
             $returnobject = @{
-                groups         = $groups
+                mailboxes         = $mailboxes
                 verboseLogs     = $verboseLogs
                 informationLogs = $informationLogs
                 warningLogs     = $warningLogs
                 errorLogs       = $errorLogs
             }
-            Remove-Variable ("groups","verboseLogs","informationLogs","warningLogs","errorLogs")     
+            Remove-Variable ("mailboxes","verboseLogs","informationLogs","warningLogs","errorLogs")     
             Write-Output $returnobject 
         }
     }
 
     # Log the data from logging arrarys (since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands)
-    $verboseLogs = $getExchangeGroups.verboseLogs
+    $verboseLogs = $getExoMailboxes.verboseLogs
     foreach($verboseLog in $verboseLogs){ Write-Verbose $verboseLog }
-    $informationLogs = $getExchangeGroups.informationLogs
+    $informationLogs = $getExoMailboxes.informationLogs
     foreach($informationLog in $informationLogs){ Write-Information $informationLog }
-    $warningLogs = $getExchangeGroups.warningLogs
+    $warningLogs = $getExoMailboxes.warningLogs
     foreach($warningLog in $warningLogs){ Write-Warning $warningLog }
-    $errorLogs = $getExchangeGroups.errorLogs
-    foreach($errorLog in $errorLogs){ Write-Warning $errorLog }
+    $errorLogs = $getExoMailboxes.errorLogs
+    foreach($errorLog in $errorLogs){ Write-Warning $errorLog }    
 }
 catch {
-    throw "Could not gather Exchange groups. Error: $_"
+    throw "Could not gather Exchange Shared Mailboxes. Error: $_"
 } finally {
     Start-Sleep 1
     if ($null -ne $remoteSession) {           
@@ -195,24 +180,16 @@ catch {
 
 
 # Send results
-$groups = $getExchangeGroups.groups
-foreach($group in $groups){
-    switch($group.RecipientType){
-        "MailUniversalSecurityGroup" {
-            $groupType = "Mail-enabled Security Group"
-        }
-        "MailUniversalDistributionGroup" {
-            $groupType = "Distribution Group"
-        }
-    }
-    
-    $permission = @{
-        DisplayName = "$($groupType) - $($group.DisplayName)";
+$mailboxes = $getExoMailboxes.mailboxes
+foreach($mailbox in $mailboxes){
+    $outputContext.Permissions.Add(
+    @{
+        DisplayName    = "Shared Mailbox - $($mailbox.DisplayName)";
         Identification = @{
-            Id = $group.Guid;
-            Name = $group.DisplayName;
+            Reference = $mailbox.Guid;
+            DisplayName = "Shared Mailbox - $($mailbox.DisplayName)";
+            Permissions = @("Full Access","Send As"); # Options:  Full Access,Send As, Send on Behalf
         }
     }
-
-    Write-output $permission | ConvertTo-Json -Depth 10;    
+)
 }

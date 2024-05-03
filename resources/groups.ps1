@@ -1,52 +1,32 @@
-$c = $configuration | ConvertFrom-Json
-
-# Set TLS to accept TLS, TLS 1.1 and TLS 1.2
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls -bor [Net.SecurityProtocolType]::Tls11 -bor [Net.SecurityProtocolType]::Tls12
-
-$VerbosePreference = "SilentlyContinue"
-$InformationPreference = "Continue"
-$WarningPreference = "Continue"
-
-# Used to connect to Exchange using user credentials (MFA not supported).
-$ConnectionUri = $c.ConnectionUri
-$Username = $c.Username
-$Password = $c.Password
-$AuthenticationMethod = $c.AuthenticationMethod
-
+############################################################################
+# HelloID-Conn-Prov-Target-Exchange-Server-On-Premises-Resources-Group
+# PowerShell V2
 # The resourceData used in this default script uses resources based on Title
-$rRef = $resourceContext | ConvertFrom-Json
-$success = $true
+############################################################################
+# Enable TLS1.2
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
-$auditLogs = [Collections.Generic.List[PSCustomObject]]::new()
+$outputContext.Success = $true
 
-# Troubleshooting
-# $dryRun = $false
-$debug = $false
+# Set debug logging
+switch ($($actionContext.Configuration.config.isDebug)) {
+    $true { $VerbosePreference = 'Continue' }
+    $false { $VerbosePreference = 'SilentlyContinue' }
+}
 
-$path = "OU=Mailgroepen,OU=Enyoi,DC=enyoi,DC=local"
+#Exchange configuration
+$ConnectionUri = $actionContext.Configuration.exchange.ConnectionUri
+$Username = $actionContext.Configuration.exchange.username
+$Password = $actionContext.Configuration.exchange.password
+$AuthenticationMethod = $actionContext.Configuration.exchange.authenticationmode
+
+#Script Variables
+$path                    = "OU=Mailgroepen,OU=Enyoi,DC=enyoi,DC=local"
 $exchangeGroupNamePrefix = "distributiongroup_"
 $exchangeGroupNameSuffix = ""
 
 #region functions
-# Write functions logic here
-function Set-PSSession {
-    <#
-    .SYNOPSIS
-        Get or create a "remote" Powershell session
-    .DESCRIPTION
-        Get or create a "remote" Powershell session at the local computer
-    .EXAMPLE
-        PS C:\> $remoteSession = Set-PSSession -PSSessionName ($psSessionName + $mutex.Number) # Test1
-       Get or Create a "remote" Powershell session at the local computer with computername and number: Test1 And assign to a $varaible which can be used to make remote calls.
-    .OUTPUTS
-        $remoteSession [System.Management.Automation.Runspaces.PSSession]
-    .NOTES
-        Make sure you always disconnect the PSSession, otherwise the PSSession is blocked to reconnect. 
-        Place the following code in the finally block to make sure the session will be disconnected
-        if ($null -ne $remoteSession) {  
-            Disconnect-PSSession $remoteSession 
-        }
-    #>
+function Set-PSSession {    
     [OutputType([System.Management.Automation.Runspaces.PSSession])]  
     param(       
         [Parameter(mandatory)]
@@ -60,38 +40,37 @@ function Set-PSSession {
         }
         # To Avoid using mutliple sessions at the same time.
         if ($sessionObject.length -gt 1) {
-            remove-pssession -Id ($sessionObject.id | Sort-Object | select-object -first 1)
+            Remove-PSSession -Id ($sessionObject.id | Sort-Object | select-object -first 1)
             $sessionObject = Get-PSSession -ComputerName $env:computername -Name $PSSessionName -ErrorAction stop
         }        
-        Write-Verbose "Remote Powershell session is found, Name: $($sessionObject.Name), ComputerName: $($sessionObject.ComputerName)"
+        Write-Verbose -Verbose "Remote Powershell session is found, Name: $($sessionObject.Name), ComputerName: $($sessionObject.ComputerName)"
     }
     catch {
-        Write-Verbose "Remote Powershell session not found: $($_)"
+        Write-Verbose -Verbose "Remote Powershell session not found: $($_)"
     }
 
     if ($null -eq $sessionObject) { 
         try {
             $remotePSSessionOption = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 5).TotalMilliseconds
             $sessionObject = New-PSSession -ComputerName $env:computername -EnableNetworkAccess:$true -Name $PSSessionName -SessionOption $remotePSSessionOption
-            Write-Verbose "Remote Powershell session is created, Name: $($sessionObject.Name), ComputerName: $($sessionObject.ComputerName)"
+            Write-Verbose -Verbose "Remote Powershell session is created, Name: $($sessionObject.Name), ComputerName: $($sessionObject.ComputerName)"
         }
         catch {
             throw "Couldn't created a PowerShell Session: $($_.Exception.Message)"
         }
     }
-    Write-Verbose "Remote Powershell Session '$($sessionObject.Name)' State: '$($sessionObject.State)' Availability: '$($sessionObject.Availability)'"
+    #Write-Verbose -Verbose "Remote Powershell Session '$($sessionObject.Name)' State: '$($sessionObject.State)' Availability: '$($sessionObject.Availability)'"
     if ($sessionObject.Availability -eq "Busy") {
         throw "Remote session is in Use" 
     }
     Write-Output $sessionObject
 }
-#endregion functions
+#endregion
 
 try {
     $remoteSession = Set-PSSession -PSSessionName 'HelloID_Prov_Exchange'
-    Connect-PSSession $remoteSession | out-null                                                                            
+    Connect-PSSession $remoteSession | out-null 
 
-    # if it does not exist create new session to exchange in remote session     
     $createSessionResult = Invoke-Command -Session $remoteSession -ScriptBlock {
         # Create array for logging since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands
         $verboseLogs = [System.Collections.ArrayList]::new()
@@ -101,7 +80,7 @@ try {
 
         # Check if Exchange Connection already exists
         try {
-            $checkCmd = Get-User -ResultSize 1 -ErrorAction Stop | Out-Null
+            $null = Get-User -ResultSize 1 -ErrorAction Stop | Out-Null
             $connectedToExchange = $true
         }
         catch {
@@ -153,10 +132,9 @@ try {
             Write-Output $returnobject 
         }
     }
-
     # Log the data from logging arrarys (since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands)
     $verboseLogs = $createSessionResult.verboseLogs
-    foreach ($verboseLog in $verboseLogs) { Write-Verbose $verboseLog }
+    foreach ($verboseLog in $verboseLogs) { Write-Verbose -Verbose $verboseLog }
     $informationLogs = $createSessionResult.informationLogs
     foreach ($informationLog in $informationLogs) { Write-Information $informationLog }
     $warningLogs = $createSessionResult.warningLogs
@@ -166,8 +144,9 @@ try {
 
     # Create Exchange groups
     $createExchangeGroups = Invoke-Command -Session $remoteSession -ScriptBlock {
-        $dryRun = $using:dryRun
-        $debug = $using:debug
+        $dryRun = $using:actionContext.DryRun
+        $debug = $using:actionContext.Configuration.config.IsDebug
+        $success = $true
 
         #region Supporting Functions
         function Remove-StringLatinCharacters {
@@ -191,10 +170,10 @@ try {
             $newName = $newName -replace '\.\.', '.';
 
             # Remove diacritics
-            $newName = Remove-StringLatinCharacters $newName
-            
+            $newName = Remove-StringLatinCharacters $newName            
             return $newName;
         }
+
         #endregion Supporting Functions
         try {
             $auditLogs = [Collections.Generic.List[PSCustomObject]]::new()
@@ -205,7 +184,9 @@ try {
             $warningLogs = [System.Collections.ArrayList]::new()
             $errorLogs = [System.Collections.ArrayList]::new()
 
-            $rRef = $using:rRef
+            $rRef = $using:resourceContext
+
+            # In preview only the first 10 items of the SourceData are used
             foreach ($resource in $rRef.SourceData) {
                 $exchangeGroupNamePrefix = $using:exchangeGroupNamePrefix
                 $exchangeGroupNameSuffix = $using:exchangeGroupNameSuffix
@@ -215,15 +196,18 @@ try {
                     # The names of security principal objects can contain all Unicode characters except the special LDAP characters defined in RFC 2253.
                     # This list of special characters includes: a leading space; a trailing space; and any of the following characters: # , + " \ < > ;
                     # A group account cannot consist solely of numbers, periods (.), or spaces. Any leading periods or spaces are cropped.
-                    # https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2003/cc776019(v=ws.10)?redirectedfrom=MSDN
-                    # https://www.ietf.org/rfc/rfc2253.txt
+                    # https: //docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2003/cc776019(v=ws.10)?redirectedfrom=MSDN
+                    # https: //www.ietf.org/rfc/rfc2253.txt
                 
                     #Custom fields consists of only one attribute, no object with multiple attributes present!
-                    $ExchangeGroupName = ("$exchangeGroupNamePrefix" + "$($resource.DisplayName)" + "$exchangeGroupNameSuffix")
+                    $ExchangeGroupName = ("$exchangeGroupNamePrefix" + "$($resource.Name)" + "$exchangeGroupNameSuffix")
                     $ExchangeGroupName = Get-ADSanitizeGroupName -Name $ExchangeGroupName
+
+                    $ExchangeGroupAlias = "$exchangeGroupNamePrefix" + "$($resource.ExternalId)"
 
                     $ExchangeGroupParams = @{
                         Name               = $ExchangeGroupName
+                        Alias              = $ExchangeGroupAlias 
                         SamAccountName     = $ExchangeGroupName
                         DisplayName        = $ExchangeGroupName
                         OrganizationalUnit = $path
@@ -234,9 +218,7 @@ try {
                     $groupExists = [bool](Get-DistributionGroup -Identity $distinguishedName -ErrorAction SilentlyContinue)
                     # If resource does not exist
                     if ($groupExists -eq $false) {
-                        <# Resource creation preview uses a timeout of 30 seconds
-                    while actual run has timeout of 10 minutes #>
-
+                        <# Resource creation preview uses a timeout of 30 seconds while actual run has timeout of 10 minutes #>
                         $adGroupExists = $false
                         $adGroupExists = [bool](Get-ADGroup -Filter { DistinguishedName -eq $distinguishedName })
                         if ($adGroupExists -eq $true) {
@@ -244,9 +226,8 @@ try {
                             [Void]$warningLogs.Add("Group $($distinguishedName) already exists in AD. Enabling ths group for mail.")
                         
                             if (-Not($dryRun -eq $True)) {
-                                $EnableExchangeGroup = Enable-DistributionGroup $distinguishedName -ErrorAction Stop
+                                $null = Enable-DistributionGroup $distinguishedName -ErrorAction Stop
             
-                                $success = $True
                                 $auditLogs.Add([PSCustomObject]@{
                                         Message = "Created resource for $($resource) - Enabled AD group $($ExchangeGroupParams.Name) at $($ExchangeGroupParams.OrganizationalUnit) for mail"
                                         Action  = "CreateResource"
@@ -257,11 +238,9 @@ try {
                         else {
                             # Create Exchange Group
                             [Void]$informationLogs.Add("Creating $($ExchangeGroupParams.Name) at $($ExchangeGroupParams.OrganizationalUnit)")
-            
-                            if (-Not($dryRun -eq $True)) {
-                                # $NewExchangeGroup = New-DistributionGroup @ExchangeGroupParams -ErrorAction Stop
-            
-                                $success = $True
+                            
+                            if (-Not($dryRun -eq $True)) {                                
+                                $null = New-DistributionGroup @ExchangeGroupParams -ErrorAction Stop
                                 $auditLogs.Add([PSCustomObject]@{
                                         Message = "Created resource for $($resource) - Created Exchange group $($ExchangeGroupParams.Name) at $($ExchangeGroupParams.OrganizationalUnit)"
                                         Action  = "CreateResource"
@@ -271,13 +250,16 @@ try {
                         }
                     }
                     else {
-                        if ($debug -eq $true) { [Void]$warningLogs.Add("Exchange Group $($ExchangeGroupParams.Name) at $($ExchangeGroupParams.OrganizationalUnit) already exists") }
-                        $success = $True
-                        # $auditLogs.Add([PSCustomObject]@{
-                        #     Message = "Skipped resource for $($resource.name) - $($ExchangeGroupParams.Name) at $($ExchangeGroupParams.OrganizationalUnit)"
-                        #     Action  = "CreateResource"
-                        #     IsError = $false
-                        # })
+                        if ($debug -eq $true) {
+                            [Void]$warningLogs.Add("Exchange Group $($ExchangeGroupParams.Name) at $($ExchangeGroupParams.OrganizationalUnit) already exists") 
+                        
+                            $auditLogs.Add([PSCustomObject]@{
+                                    Message = "Exchange Group $($ExchangeGroupParams.Name) at $($ExchangeGroupParams.OrganizationalUnit) already exists"
+                                    Action  = "CreateResource"
+                                    IsError = $false
+                                })
+                        }
+                            
                     }
                 }
                 catch {
@@ -285,7 +267,6 @@ try {
                     $success = $false
                     $auditLogs.Add([PSCustomObject]@{
                             Message = "Failed to create resource for $($resource) - $($ExchangeGroupParams.Name) at $($ExchangeGroupParams.OrganizationalUnit). Error: $_"
-                            # Message = "Failed to create resource for $($resource.name) - $($ExchangeGroupParams.Name) at $($ExchangeGroupParams.OrganizationalUnit). Error: $_"
                             Action  = "CreateResource"
                             IsError = $true
                         })
@@ -301,40 +282,50 @@ try {
                 warningLogs     = $warningLogs
                 errorLogs       = $errorLogs
             }
-            # Remove-Variable ("success","auditLogs","verboseLogs", "informationLogs", "warningLogs", "errorLogs")
+            Remove-Variable ("success","auditLogs","verboseLogs", "informationLogs", "warningLogs", "errorLogs")
             Write-Output $returnobject 
         }
     }
 
-    $success = $createExchangeGroups.success
     $auditLogs = $createExchangeGroups.auditLogs
 
     # Log the data from logging arrarys (since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands)
     $verboseLogs = $createExchangeGroups.verboseLogs
-    foreach ($verboseLog in $verboseLogs) { Write-Verbose $verboseLog }
+    foreach ($verboseLog in $verboseLogs) { Write-Verbose -Verbose $verboseLog }
     $informationLogs = $createExchangeGroups.informationLogs
     foreach ($informationLog in $informationLogs) { Write-Information $informationLog }
     $warningLogs = $createExchangeGroups.warningLogs
     foreach ($warningLog in $warningLogs) { Write-Warning $warningLog }
     $errorLogs = $createExchangeGroups.errorLogs
     foreach ($errorLog in $errorLogs) { Write-Warning $errorLog }
+
+    $outputContext.Success = $createExchangeGroups.success
+    foreach ($auditlog in $auditLogs) { 
+        $outputContext.AuditLogs.Add($auditlog)                
+    }    
 }
-catch {
-    throw "Could not create Exchange groups. Error: $_"
+catch {    
+    $ex = $PSItem
+    if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
+        $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
+        $errorObj = Resolve-Exchange Server On PremisesError -ErrorObject $ex
+        $auditMessage = "Could not grant Exchange Server On Premises permission. Error: $($errorObj.FriendlyMessage)"
+        Write-Warning "Error at Line '$($errorObj.ScriptLineNumber)': $($errorObj.Line). Error: $($errorObj.ErrorDetails)"
+    }
+    else {
+        $auditMessage = "Could not grant Exchange Server On Premises permission. Error: $($_.Exception.Message)"
+        Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
+    }
+    $outputContext.AuditLogs.Add([PSCustomObject]@{
+            Message = $auditMessage
+            Action  = "CreateResource"
+            IsError = $true
+        })
 }
 finally {
     Start-Sleep 1
     if ($null -ne $remoteSession) {           
         Disconnect-PSSession $remoteSession -WarningAction SilentlyContinue | out-null   # Suppress Warning: PSSession Connection was created using the EnableNetworkAccess parameter and can only be reconnected from the local computer. # to fix the warning the session must be created with a elevated prompt
         Write-Verbose "Remote Powershell Session '$($remoteSession.Name)' State: '$($remoteSession.State)' Availability: '$($remoteSession.Availability)'"
-    }      
+    }
 }
-
-
-# Send results
-$result = [PSCustomObject]@{
-    Success   = $success
-    AuditLogs = $auditLogs
-}
-
-Write-Output $result | ConvertTo-Json -Depth 10
