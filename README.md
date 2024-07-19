@@ -37,13 +37,13 @@ The following lifecycle actions are available:
 | permissions/groups/grantPermission.ps1                             | PowerShell _grant_ lifecycle action                                   |
 | permissions/groups/revokePermission.ps1                            | PowerShell _revoke_ lifecycle action                                  |
 | permissions/groups/permissions.ps1                                 | PowerShell _permissions_ lifecycle action                             |
-| permissions/sharedmailboxes/grantPermission.ps1                    | PowerShell _grant_ lifecycle action                                   |
-| permissions/sharedmailboxes/revokePermission.ps1                   | PowerShell _revoke_ lifecycle action                                  |
-| permissions/sharedmailboxes/permissions.ps1                        | PowerShell _permissions_ lifecycle action                             |
-| permissions/sharedMailboxesDynamic/dynamicpermissions.ps1          | PowerShell _grant_, _update_ & _revoke_ lifecycle action              |
+| permissions/sharedMailboxes/grantPermission.ps1                    | PowerShell _grant_ lifecycle action                                   |
+| permissions/sharedMailboxes/revokePermission.ps1                   | PowerShell _revoke_ lifecycle action                                  |
+| permissions/sharedMailboxes/permissions.ps1                        | PowerShell _permissions_ lifecycle action                             |
+| permissions/sharedMailboxesDynamic/subPermissions.ps1              | PowerShell _grant_, _update_ & _revoke_ lifecycle action              |
 | permissions/sharedMailboxesDynamic/permissions.ps1                 | PowerShell _permissions_ lifecycle action                             |
-| resources/groups.ps1                                               | PowerShell _resources_ lifecycle action                               |
-| resources/sharedmailboxes.ps1                                      | PowerShell _resources_ lifecycle action                               |
+| resources/groups/resources.ps1                                     | PowerShell _resources_ lifecycle action                               |
+| resources/sharedMailboxes/resources.ps1                            | PowerShell _resources_ lifecycle action                               |
 | configuration.json                                                 | Default _configuration.json_                                          |
 | fieldMapping.json                                                  | Default _fieldMapping.json_                                           |
 | postAdAction/postAdAction.create.DisableExchangeActiveSync_OWA.ps1 | Post-AD-action used in builtin AD-connector _create_ lifecycle action |
