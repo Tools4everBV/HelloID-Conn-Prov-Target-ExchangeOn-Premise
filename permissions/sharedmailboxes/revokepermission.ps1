@@ -7,7 +7,6 @@
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
 $outputContext.Success = $true
-$actionContext.DryRun = $false
 
 # Set debug logging
 switch ($($actionContext.Configuration.config.isDebug)) {

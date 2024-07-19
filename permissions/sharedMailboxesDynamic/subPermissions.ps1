@@ -144,8 +144,6 @@ try {
     Write-Information ("Desired Permissions: {0}" -f ($desiredPermissions.Values | ConvertTo-Json))
     Write-Information ("Existing Permissions: {0}" -f ($actionContext.CurrentPermissions.DisplayName | ConvertTo-Json))
     
-    #$actionContext.DryRun = $false
-
     # Compare desired with current permissions and grant permissions
     foreach ($permission in $desiredPermissions.GetEnumerator()) {
         # Uncomment when sub-permissions are enabled
