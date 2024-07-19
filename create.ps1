@@ -1,7 +1,6 @@
 ##############################################################
 # HelloID-Conn-Prov-Target-Exchange-OnPremise-Create-Correlate
-#
-# Version: 2.0.0
+# PowerShell V2
 ##############################################################
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12

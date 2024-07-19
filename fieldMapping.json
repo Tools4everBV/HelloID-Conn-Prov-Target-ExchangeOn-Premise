@@ -29,7 +29,7 @@
               "Update"
             ],
             "MappingMode": "Complex",
-            "Value": "\"function getEmail() {\\r\\n    let mail = '';\\r\\n\\r\\n    if (typeof Person.Accounts._bccd667807a9431a9d4acfc64c19a3d6.mail !== 'undefined' && Person.Accounts._bccd667807a9431a9d4acfc64c19a3d6.mail) {\\r\\n        mail = Person.Accounts._bccd667807a9431a9d4acfc64c19a3d6.mail;\\r\\n    }\\r\\n\\r\\n    return mail;\\r\\n}\\r\\n\\r\\ngetEmail()\"",
+            "Value": "\"function getEmail() {\\r\\n    let mail = '';\\r\\n\\r\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.mail !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.mail) {\\r\\n        mail = Person.Accounts.MicrosoftActiveDirectory.mail;\\r\\n    }\\r\\n\\r\\n    return mail;\\r\\n}\\r\\n\\r\\ngetEmail()\"",
             "UsedInNotifications": false,
             "StoreInAccountData": false
           }
@@ -46,7 +46,7 @@
               "Update"
             ],
             "MappingMode": "Complex",
-            "Value": "\"function getUserPrincipalName() {\\r\\n    let upn = '';\\r\\n\\r\\n    if (typeof Person.Accounts._bccd667807a9431a9d4acfc64c19a3d6.userPrincipalName !== 'undefined' && Person.Accounts._bccd667807a9431a9d4acfc64c19a3d6.userPrincipalName) {\\r\\n        upn = Person.Accounts._bccd667807a9431a9d4acfc64c19a3d6.userPrincipalName;\\r\\n    }\\r\\n\\r\\n    return upn;\\r\\n}\\r\\n\\r\\ngetUserPrincipalName()\"",
+            "Value": "\"function getUserPrincipalName() {\\r\\n    let upn = '';\\r\\n\\r\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.userPrincipalName !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.userPrincipalName) {\\r\\n        upn = Person.Accounts.MicrosoftActiveDirectory.userPrincipalName;\\r\\n    }\\r\\n\\r\\n    return upn;\\r\\n}\\r\\n\\r\\ngetUserPrincipalName()\"",
             "UsedInNotifications": false,
             "StoreInAccountData": false
           }
@@ -63,7 +63,7 @@
               "Update"
             ],
             "MappingMode": "Complex",
-            "Value": "\"function getSamAccountName() {\\r\\n    let san = '';\\r\\n\\r\\n    if (typeof Person.Accounts._bccd667807a9431a9d4acfc64c19a3d6.sAMAccountName !== 'undefined' && Person.Accounts._bccd667807a9431a9d4acfc64c19a3d6.sAMAccountName) {\\r\\n        san = Person.Accounts._bccd667807a9431a9d4acfc64c19a3d6.sAMAccountName;\\r\\n    }\\r\\n\\r\\n    return san;\\r\\n}\\r\\n\\r\\ngetSamAccountName()\"",
+            "Value": "\"function getSamAccountName() {\\r\\n    let san = '';\\r\\n\\r\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.sAMAccountName !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.sAMAccountName) {\\r\\n        san = Person.Accounts.MicrosoftActiveDirectory.sAMAccountName;\\r\\n    }\\r\\n\\r\\n    return san;\\r\\n}\\r\\n\\r\\ngetSamAccountName()\"",
             "UsedInNotifications": false,
             "StoreInAccountData": false
           }

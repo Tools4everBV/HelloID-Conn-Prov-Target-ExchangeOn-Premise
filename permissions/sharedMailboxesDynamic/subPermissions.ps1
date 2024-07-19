@@ -1,8 +1,8 @@
 ##############################################################################
-# HelloID-Conn-Prov-Target-Exchange-OnPremise-DynamicPermissions-SharedMailbox
-#
-# Version: 2.0.0
+# HelloID-Conn-Prov-Target-Exchange-OnPremise-SubPermissions-SharedMailboxDynamic
+# PowerShell V2
 ##############################################################################
+
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 

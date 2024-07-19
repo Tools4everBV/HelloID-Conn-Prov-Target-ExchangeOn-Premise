@@ -3,6 +3,7 @@
 # PowerShell V2
 # The resourceData used in this default script uses resources based on Title
 ############################################################################
+
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 

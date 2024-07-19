@@ -3,22 +3,23 @@
 > This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements.
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/69046642/160915847-b8a72368-931c-45d1-8f93-9cc7bb974ca8.png">
+  <img src="https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-ExchangeOn-Premise/blob/main/Logo.png?raw=true">
 </p>
 
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
-- [Table of Contents](#table-of-contents)
-- [Introduction](#introduction)
-- [Requirements](#requirements)
-- [Getting Started](#getting-started)  
-  - [Provisioning PowerShell V2 connector](#provisioning-powershell-v2-connector)
-    - [Correlation configuration](#correlation-configuration)
-    - [Field mapping](#field-mapping)
-    - [Configuring Exchange](#configuring-exchange-management-shell)
-    - [Connection settings](#connection-settings)
-- [Getting help](#getting-help)
-- [HelloID Docs](#helloid-docs)
+- [HelloID-Conn-Prov-Target-Exchange Server On Premises](#helloid-conn-prov-target-exchange-server-on-premises)
+  - [Table of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+  - [Requirements](#requirements)
+  - [Getting started](#getting-started)
+    - [Provisioning PowerShell V2 connector](#provisioning-powershell-v2-connector)
+      - [Correlation configuration](#correlation-configuration)
+      - [Field mapping](#field-mapping)
+      - [Configuring Exchange Management Shell](#configuring-exchange-management-shell)
+      - [Connection settings](#connection-settings)
+  - [Getting help](#getting-help)
+  - [HelloID Docs](#helloid-docs)
 
 ## Introduction
 
@@ -30,21 +31,21 @@ If you want to create Exchange On-Premise users, please use the **built-in Micro
 The following lifecycle actions are available:
 
 
-| Action                 | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| create.ps1             | PowerShell _create_ lifecycle action             |
-| permissions/groups/grantPermission.ps1    | PowerShell _grant_ lifecycle action              |
-| permissions/groups/revokePermission.ps1   | PowerShell _revoke_ lifecycle action             |
-| permissions/groups/permissions.ps1        | PowerShell _permissions_ lifecycle action        |
-| permissions/sharedmailboxes/grantPermission.ps1    | PowerShell _grant_ lifecycle action              |
-| permissions/sharedmailboxes/revokePermission.ps1   | PowerShell _revoke_ lifecycle action             |
-| permissions/sharedmailboxes/permissions.ps1        | PowerShell _permissions_ lifecycle action        |
-| permissions/dynamicpermissions/dynamicpermissions.ps1   | PowerShell _grant_, _update_ & _revoke_ lifecycle action             |
-| permissions/dynamicpermissions/permissions.ps1    | PowerShell _permissions_ lifecycle action              |
-| resources/groups.ps1          | PowerShell _resources_ lifecycle action          |
-| resources/sharedmailboxes.ps1          | PowerShell _resources_ lifecycle action          |
-| configuration.json     | Default _configuration.json_ |
-| fieldMapping.json      | Default _fieldMapping.json_   |
+| Action                                                | Description                                                           |
+| ----------------------------------------------------- | --------------------------------------------------------------------- |
+| create.ps1                                            | PowerShell _create_ lifecycle action                                  |
+| permissions/groups/grantPermission.ps1                | PowerShell _grant_ lifecycle action                                   |
+| permissions/groups/revokePermission.ps1               | PowerShell _revoke_ lifecycle action                                  |
+| permissions/groups/permissions.ps1                    | PowerShell _permissions_ lifecycle action                             |
+| permissions/sharedmailboxes/grantPermission.ps1       | PowerShell _grant_ lifecycle action                                   |
+| permissions/sharedmailboxes/revokePermission.ps1      | PowerShell _revoke_ lifecycle action                                  |
+| permissions/sharedmailboxes/permissions.ps1           | PowerShell _permissions_ lifecycle action                             |
+| permissions/dynamicpermissions/dynamicpermissions.ps1 | PowerShell _grant_, _update_ & _revoke_ lifecycle action              |
+| permissions/dynamicpermissions/permissions.ps1        | PowerShell _permissions_ lifecycle action                             |
+| resources/groups.ps1                                  | PowerShell _resources_ lifecycle action                               |
+| resources/sharedmailboxes.ps1                         | PowerShell _resources_ lifecycle action                               |
+| configuration.json                                    | Default _configuration.json_                                          |
+| fieldMapping.json                                     | Default _fieldMapping.json_                                           |
 | postAdAction.create.DisableExchangeActiveSync_OWA.ps1 | Post-AD-action used in builtin AD-connector _create_ lifecycle action |
 
 ## Requirements
@@ -68,11 +69,11 @@ To properly setup the correlation:
 
 2. Specify the following configuration:
 
-    | Setting                   | Value                             |
-    | ------------------------- | --------------------------------- |
-    | Enable correlation        | `True`                            |
+    | Setting                   | Value                           |
+    | ------------------------- | ------------------------------- |
+    | Enable correlation        | `True`                          |
     | Person correlation field  | `PersonContext.Person.UserName` |
-    | Account correlation field | `Account.UserPrincipalName`                                |
+    | Account correlation field | `Account.UserPrincipalName`     |
 
 > [!TIP]
 > _For more information on correlation, please refer to our correlation [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems/correlation.html) pages_.
@@ -89,11 +90,11 @@ For more information, please check out the [Microsoft docs](https://docs.microso
 #### Connection settings
 The following settings are required to connect.
 
-| Setting     | Description |
-| ------------ | ----------- |
-| Connection Uri | The connection uri of the on-prem Exchange |
-| Username | The username of the service account in Exchange |
-| Password | The password of the service account in Exchange |
+| Setting               | Description                                                                   |
+| --------------------- | ----------------------------------------------------------------------------- |
+| Connection Uri        | The connection uri of the on-prem Exchange                                    |
+| Username              | The username of the service account in Exchange                               |
+| Password              | The password of the service account in Exchange                               |
 | Authentication Method | The authentication method that is used to authenticate the user's credentials |
 
 ## Getting help
