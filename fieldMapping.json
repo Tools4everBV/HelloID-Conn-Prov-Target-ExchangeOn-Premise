@@ -1,91 +1,56 @@
 {
-    "Version": "v1",
-    "MappingFields": [
-      {
-        "Name": "employeeNumber",
-        "Description": "",
-        "Type": "Text",
-        "MappingActions": [
-          {
-            "MapForActions": [
-              "Create",
-              "Update"
-            ],
-            "MappingMode": "Field",
-            "Value": "\"Person.ExternalId\"",
-            "UsedInNotifications": false,
-            "StoreInAccountData": false
-          }
-        ]
-      },
-      {
-        "Name": "mail",
-        "Description": "",
-        "Type": "Text",
-        "MappingActions": [
-          {
-            "MapForActions": [
-              "Create",
-              "Update"
-            ],
-            "MappingMode": "Complex",
-            "Value": "\"function getEmail() {\\r\\n    let mail = '';\\r\\n\\r\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.mail !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.mail) {\\r\\n        mail = Person.Accounts.MicrosoftActiveDirectory.mail;\\r\\n    }\\r\\n\\r\\n    return mail;\\r\\n}\\r\\n\\r\\ngetEmail()\"",
-            "UsedInNotifications": false,
-            "StoreInAccountData": false
-          }
-        ]
-      },
-      {
-        "Name": "userPrincipalName",
-        "Description": "",
-        "Type": "Text",
-        "MappingActions": [
-          {
-            "MapForActions": [
-              "Create",
-              "Update"
-            ],
-            "MappingMode": "Complex",
-            "Value": "\"function getUserPrincipalName() {\\r\\n    let upn = '';\\r\\n\\r\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.userPrincipalName !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.userPrincipalName) {\\r\\n        upn = Person.Accounts.MicrosoftActiveDirectory.userPrincipalName;\\r\\n    }\\r\\n\\r\\n    return upn;\\r\\n}\\r\\n\\r\\ngetUserPrincipalName()\"",
-            "UsedInNotifications": false,
-            "StoreInAccountData": false
-          }
-        ]
-      },
-      {
-        "Name": "sAMAccountName",
-        "Description": "",
-        "Type": "Text",
-        "MappingActions": [
-          {
-            "MapForActions": [
-              "Create",
-              "Update"
-            ],
-            "MappingMode": "Complex",
-            "Value": "\"function getSamAccountName() {\\r\\n    let san = '';\\r\\n\\r\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.sAMAccountName !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.sAMAccountName) {\\r\\n        san = Person.Accounts.MicrosoftActiveDirectory.sAMAccountName;\\r\\n    }\\r\\n\\r\\n    return san;\\r\\n}\\r\\n\\r\\ngetSamAccountName()\"",
-            "UsedInNotifications": false,
-            "StoreInAccountData": false
-          }
-        ]
-      },
-      {
-        "Name": "exchGuid",
-        "Description": "",
-        "Type": "Text",
-        "MappingActions": [
-          {
-            "MapForActions": [
-              "Create",
-              "Update"
-            ],
-            "MappingMode": "None",
-            "Value": "\"\"",
-            "UsedInNotifications": false,
-            "StoreInAccountData": true
-          }
-        ]
-      }
-    ],
-    "UniqueFieldNames": []
-  }
+  "Version": "v1",
+  "MappingFields": [
+    {
+      "Name": "ExchangeGuid",
+      "Description": "",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create"
+          ],
+          "MappingMode": "None",
+          "Value": "null",
+          "UsedInNotifications": false,
+          "StoreInAccountData": true
+        }
+      ]
+    },
+    {
+      "Name": "userPrincipalName",
+      "Description": "",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create",
+            "Enable",
+            "Disable"
+          ],
+          "MappingMode": "Complex",
+          "Value": "\"function getUserPrincipalName() {\\r\\n    let upn = '';\\r\\n\\r\\n    if (typeof Person.Accounts._d2681fd668374f97b18827a6bed92269.userPrincipalName !== 'undefined' && Person.Accounts._d2681fd668374f97b18827a6bed92269.userPrincipalName) {\\r\\n        upn = Person.Accounts._d2681fd668374f97b18827a6bed92269.userPrincipalName;\\r\\n    }\\r\\n\\r\\n    return upn;\\r\\n}\\r\\n\\r\\ngetUserPrincipalName()\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    },
+    {
+      "Name": "mail",
+      "Description": "",
+      "Type": "Text",
+      "MappingActions": [
+        {
+          "MapForActions": [
+            "Create"
+          ],
+          "MappingMode": "Complex",
+          "Value": "\"function getEmail() {\\r\\n    let mail = '';\\r\\n\\r\\n    if (typeof Person.Accounts._d2681fd668374f97b18827a6bed92269.mail !== 'undefined' && Person.Accounts._d2681fd668374f97b18827a6bed92269.mail) {\\r\\n        mail = Person.Accounts._d2681fd668374f97b18827a6bed92269.mail;\\r\\n    }\\r\\n\\r\\n    return mail;\\r\\n}\\r\\n\\r\\ngetEmail()\"",
+          "UsedInNotifications": false,
+          "StoreInAccountData": false
+        }
+      ]
+    }
+  ],
+  "UniqueFieldNames": []
+}
