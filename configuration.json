@@ -1,47 +1,93 @@
 [
     {
-        "key": "ConnectionUri",
-        "type": "input",
-        "defaultValue": "",
-        "templateOptions": {
-            "label": "Connection Uri",
-            "placeholder": "http://<ServerFQDN>/PowerShell/",
-            "description": "The connection uri of the on-prem Exchange",
-            "required": true
-        }
+      "key": "exchange.connectionUri",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "Exchange Connection URL",
+        "placeholder": "http://<servername>/Powershell",
+        "description": "The Exchange connection url for setting up powershell sessions",
+        "required": true
+      }
     },
     {
-        "key": "Username",
-        "type": "input",
-        "defaultValue": "",
-        "templateOptions": {
-            "label": "Username",
-            "placeholder": "admin@enyoi.onmicrosoft.com",
-            "description": "The username of the service account in Exchange",
-            "required": true
-        }
+      "key": "exchange.username",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "Exchange Username",
+        "placeholder": "Account with enough privileges in AD and Exchange",
+        "required": true
+      }
     },
     {
-        "key": "Password",
-        "type": "input",
-        "defaultValue": "",
-        "templateOptions": {
-            "label": "Password",
-            "type": "password",
-            "placeholder": "P@ssw0rd1!",
-            "description": "The password of the service account in Exchange",
-            "required": true
-        }
+      "key": "exchange.password",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "Exchange Password",
+        "type": "password",
+        "placeholder": "",
+        "description": "",
+        "required": true
+      }
     },
     {
-        "key": "AuthenticationMethod",
-        "type": "input",
-        "defaultValue": "Default",
-        "templateOptions": {
-            "label": "Authentication method",
-            "placeholder": "Default",
-            "description": "The authentication method that is used to authenticate the user's credentials",
-            "required": true
-        }
+      "key": "exchange.authenticationmode",
+      "type": "select",
+      "templateOptions": {
+        "label": "AUTHENTICATION MODE",
+        "placeholder": "Please select an option",
+        "options": [
+          {
+            "value": "Default",
+            "label": "Default"
+          },
+          {
+            "value": "Basic",
+            "label": "Basic"
+          },
+          {
+            "value": "Credssp",
+            "label": "Credssp"
+          },
+          {
+            "value": "Digest",
+            "label": "Digest"
+          },
+          {
+            "value": "Kerberos",
+            "label": "Kerberos"
+          },
+          {
+            "value": "Negotiate",
+            "label": "Negotiate"
+          },
+          {
+            "value": "NegotiateWithImplicitCredential",
+            "label": "NegotiateWithImplicitCredential"
+          }
+        ]
+      }
+    },
+    {
+      "key": "exchange.sharedMailboxContainer",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "OU with Shared Mailbox Users",
+        "placeholder": "OU=<container>,DC=domain,DC=local",
+        "description": "The AD container in which the SharedMailbox users exists",
+        "required": true
+      }
+    },
+    {
+      "key": "config.IsDebug",
+      "type": "checkbox",
+      "defaultValue": false,
+      "templateOptions": {
+        "label": "Verbose logging for department group management",
+        "required": false
+      }
     }
-]
+  ]
