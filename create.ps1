@@ -214,7 +214,6 @@ try {
                         Write-Output $createdAccount
                     } -ErrorAction Stop
                     Write-Information ($setExchangeUser | ConvertTo-Json)
-                    #Write-Information ($setExchangeUser.createdAccount | ConvertTo-Json)
                     $outputContext.Data = $setExchangeUser
                     $outputContext.AccountReference = $setExchangeUser.ExchangeGuid
                     $auditLogMessage = "Create account was successful. AccountReference is: [$($outputContext.AccountReference)]"                   

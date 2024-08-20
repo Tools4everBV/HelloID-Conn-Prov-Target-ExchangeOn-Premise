@@ -22,7 +22,7 @@ $Password = $actionContext.Configuration.exchange.password
 $AuthenticationMethod = $actionContext.Configuration.exchange.authenticationmode
 
 #Script Variables
-$path                    = "OU=Mailgroepen,OU=Enyoi,DC=enyoi,DC=local"
+$path = "OU=Mailgroepen,OU=Enyoi,DC=enyoi,DC=local"
 $exchangeGroupNamePrefix = "distributiongroup_"
 $exchangeGroupNameSuffix = ""
 
@@ -259,8 +259,7 @@ try {
                                     Action  = "CreateResource"
                                     IsError = $false
                                 })
-                        }
-                            
+                        }            
                     }
                 }
                 catch {
@@ -283,7 +282,7 @@ try {
                 warningLogs     = $warningLogs
                 errorLogs       = $errorLogs
             }
-            Remove-Variable ("success","auditLogs","verboseLogs", "informationLogs", "warningLogs", "errorLogs")
+            Remove-Variable ("success", "auditLogs", "verboseLogs", "informationLogs", "warningLogs", "errorLogs")
             Write-Output $returnobject 
         }
     }

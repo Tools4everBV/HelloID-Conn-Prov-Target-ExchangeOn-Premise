@@ -5,7 +5,7 @@
       "defaultValue": "",
       "templateOptions": {
         "label": "Exchange Connection URL",
-        "placeholder": "https://<servername>/Powershell",
+        "placeholder": "http://<servername>/Powershell",
         "description": "The Exchange connection url for setting up powershell sessions",
         "required": true
       }

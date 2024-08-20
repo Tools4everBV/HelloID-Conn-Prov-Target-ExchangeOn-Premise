@@ -153,10 +153,6 @@ try {
         if ($getExchangeUser.Name.Count -eq 0) {
             Write-Information "Could not find mailbox with identity [$($actionContext.Data.userPrincipalName)]"                
             $action = 'NotFound'
-            $auditLogs.Add([PSCustomObject]@{
-                    Message = "$action mailbox for: [$($actionContext.Data.userPrincipalName)] will be executed."
-                    IsError = $false
-                })
         }
         if ($getExchangeUser.Name.Count -gt 0) {            
             Write-Information "Correlation found mailbox for: [$($actionContext.Data.userPrincipalName)]"
@@ -170,11 +166,7 @@ try {
     catch { 
         if ($_.Exception.ErrorRecord.CategoryInfo.Reason -eq "ManagementObjectNotFoundException") {
             Write-Warning "Could not find mailbox with identity [$($actionContext.Data.userPrincipalName)]"
-            $action = 'NotFound'
-            $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = "Could not find mailbox with identity [$($actionContext.Data.userPrincipalName)]."
-                    IsError = $false
-                })                    
+            $action = 'NotFound'                  
         }
         else {
             if (-Not [string]::IsNullOrEmpty($_.Exception.InnerExceptions)) {

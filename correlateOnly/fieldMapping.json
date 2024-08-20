@@ -8,8 +8,7 @@
         "MappingActions": [
           {
             "MapForActions": [
-              "Create",
-              "Update"
+              "Create"
             ],
             "MappingMode": "Field",
             "Value": "\"Person.ExternalId\"",
@@ -25,8 +24,7 @@
         "MappingActions": [
           {
             "MapForActions": [
-              "Create",
-              "Update"
+              "Create"
             ],
             "MappingMode": "Complex",
             "Value": "\"function getEmail() {\\r\\n    let mail = '';\\r\\n\\r\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.mail !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.mail) {\\r\\n        mail = Person.Accounts.MicrosoftActiveDirectory.mail;\\r\\n    }\\r\\n\\r\\n    return mail;\\r\\n}\\r\\n\\r\\ngetEmail()\"",
@@ -37,7 +35,7 @@
       },
       {
         "Name": "userPrincipalName",
-        "Description": "",
+        "Description": "[Mandatory]",
         "Type": "Text",
         "MappingActions": [
           {
@@ -59,8 +57,7 @@
         "MappingActions": [
           {
             "MapForActions": [
-              "Create",
-              "Update"
+              "Create"
             ],
             "MappingMode": "Complex",
             "Value": "\"function getSamAccountName() {\\r\\n    let san = '';\\r\\n\\r\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.sAMAccountName !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.sAMAccountName) {\\r\\n        san = Person.Accounts.MicrosoftActiveDirectory.sAMAccountName;\\r\\n    }\\r\\n\\r\\n    return san;\\r\\n}\\r\\n\\r\\ngetSamAccountName()\"",
@@ -71,13 +68,12 @@
       },
       {
         "Name": "exchGuid",
-        "Description": "",
+        "Description": "[Mandatory]",
         "Type": "Text",
         "MappingActions": [
           {
             "MapForActions": [
-              "Create",
-              "Update"
+              "Create"
             ],
             "MappingMode": "None",
             "Value": "\"\"",

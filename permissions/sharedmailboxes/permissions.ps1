@@ -36,7 +36,8 @@ function Set-PSSession {
             $sessionObject = Get-PSSession -ComputerName $env:computername -Name $PSSessionName -ErrorAction stop
         }        
         Write-Verbose "Remote Powershell session is found, Name: $($sessionObject.Name), ComputerName: $($sessionObject.ComputerName)"
-    } catch {
+    }
+    catch {
         Write-Verbose "Remote Powershell session not found: $($_)"
     }
 
@@ -45,7 +46,8 @@ function Set-PSSession {
             $remotePSSessionOption = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 5).TotalMilliseconds
             $sessionObject = New-PSSession -ComputerName $env:computername -EnableNetworkAccess:$true -Name $PSSessionName -SessionOption $remotePSSessionOption
             Write-Verbose "Remote Powershell session is created, Name: $($sessionObject.Name), ComputerName: $($sessionObject.ComputerName)"
-        } catch {
+        }
+        catch {
             throw "Couldn't created a PowerShell Session: $($_.Exception.Message)"
         }
     }
@@ -70,18 +72,19 @@ try {
         $errorLogs = [System.Collections.ArrayList]::new()
 
         # Check if Exchange Connection already exists
-        try{
+        try {
             $null = Get-User -ResultSize 1 -ErrorAction Stop | Out-Null
             $connectedToExchange = $true
-        }catch{
-            if($_.Exception.Message -like "The term 'Get-User' is not recognized as the name of a cmdlet, function, script file, or operable program.*"){
+        }
+        catch {
+            if ($_.Exception.Message -like "The term 'Get-User' is not recognized as the name of a cmdlet, function, script file, or operable program.*") {
                 $connectedToExchange = $false
             }
         }
         
         # Connect to Exchange
-        try{
-            if($connectedToExchange -eq $false){
+        try {
+            if ($connectedToExchange -eq $false) {
                 $connectionUri = $using:ConnectionUri
                 $authenticationMethod = $using:AuthenticationMethod
                 $password = $using:Password
@@ -96,43 +99,46 @@ try {
                 $exchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $credential -Authentication $authenticationMethod -AllowRedirection -SessionOption $sessionOption -EnableNetworkAccess:$false -ErrorAction Stop
                 $null = Import-PSSession $exchangeSession
                 [Void]$informationLogs.Add("Successfully connected to Exchange: $connectionUri")
-            }else{
+            }
+            else {
                 [Void]$verboseLogs.Add("Already connected to Exchange")
             }
         }
         catch {
             if (-Not [string]::IsNullOrEmpty($_.Exception.InnerExceptions)) {
                 $errorMessage = "$($_.Exception.InnerExceptions)"
-            }else{
+            }
+            else {
                 $errorMessage = "$($_.Exception.Message) $($_.ScriptStackTrace)"
             }
             [Void]$warningLogs.Add($errorMessage)
             throw "Could not connect to Exchange, error: $_"
-        } finally {
+        }
+        finally {
             $returnobject = @{
                 verboseLogs     = $verboseLogs
                 informationLogs = $informationLogs
                 warningLogs     = $warningLogs
                 errorLogs       = $errorLogs
             }
-            Remove-Variable ("verboseLogs","informationLogs","warningLogs","errorLogs")     
+            Remove-Variable ("verboseLogs", "informationLogs", "warningLogs", "errorLogs")     
             Write-Output $returnobject 
         }
     }
 
     # Log the data from logging arrarys (since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands)
     $verboseLogs = $createSessionResult.verboseLogs
-    foreach($verboseLog in $verboseLogs){ Write-Verbose $verboseLog }
+    foreach ($verboseLog in $verboseLogs) { Write-Verbose $verboseLog }
     $informationLogs = $createSessionResult.informationLogs
-    foreach($informationLog in $informationLogs){ Write-Information $informationLog }
+    foreach ($informationLog in $informationLogs) { Write-Information $informationLog }
     $warningLogs = $createSessionResult.warningLogs
-    foreach($warningLog in $warningLogs){ Write-Warning $warningLog }
+    foreach ($warningLog in $warningLogs) { Write-Warning $warningLog }
     $errorLogs = $createSessionResult.errorLogs
-    foreach($errorLog in $errorLogs){ Write-Warning $errorLog }
+    foreach ($errorLog in $errorLogs) { Write-Warning $errorLog }
 
     # Get Exchange Shared Mailboxes
     $getExoMailboxes = Invoke-Command -Session $remoteSession -ScriptBlock {
-        try{
+        try {
             # Create array for logging since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands
             $verboseLogs = [System.Collections.ArrayList]::new()
             $informationLogs = [System.Collections.ArrayList]::new()
@@ -143,34 +149,37 @@ try {
             # Only get Exchange Shared Mailboxes (can be changed easily to get all mailboxes)
             $mailboxes = Get-Mailbox -RecipientTypeDetails SharedMailbox -resultSize unlimited
             [Void]$informationLogs.Add("Finished searching for Exchange Shared Mailboxes. Found [$($mailboxes.id.Count) Shared Mailboxes]")
-        } catch {
+        }
+        catch {
             throw "Could not gather Exchange Shared Mailboxes. Error: $_"
-        } finally {
+        }
+        finally {
             $returnobject = @{
-                mailboxes         = $mailboxes
+                mailboxes       = $mailboxes
                 verboseLogs     = $verboseLogs
                 informationLogs = $informationLogs
                 warningLogs     = $warningLogs
                 errorLogs       = $errorLogs
             }
-            Remove-Variable ("mailboxes","verboseLogs","informationLogs","warningLogs","errorLogs")     
+            Remove-Variable ("mailboxes", "verboseLogs", "informationLogs", "warningLogs", "errorLogs")     
             Write-Output $returnobject 
         }
     }
 
     # Log the data from logging arrarys (since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands)
     $verboseLogs = $getExoMailboxes.verboseLogs
-    foreach($verboseLog in $verboseLogs){ Write-Verbose $verboseLog }
+    foreach ($verboseLog in $verboseLogs) { Write-Verbose $verboseLog }
     $informationLogs = $getExoMailboxes.informationLogs
-    foreach($informationLog in $informationLogs){ Write-Information $informationLog }
+    foreach ($informationLog in $informationLogs) { Write-Information $informationLog }
     $warningLogs = $getExoMailboxes.warningLogs
-    foreach($warningLog in $warningLogs){ Write-Warning $warningLog }
+    foreach ($warningLog in $warningLogs) { Write-Warning $warningLog }
     $errorLogs = $getExoMailboxes.errorLogs
-    foreach($errorLog in $errorLogs){ Write-Warning $errorLog }    
+    foreach ($errorLog in $errorLogs) { Write-Warning $errorLog }    
 }
 catch {
     throw "Could not gather Exchange Shared Mailboxes. Error: $_"
-} finally {
+}
+finally {
     Start-Sleep 1
     if ($null -ne $remoteSession) {           
         Disconnect-PSSession $remoteSession -WarningAction SilentlyContinue | out-null   # Suppress Warning: PSSession Connection was created using the EnableNetworkAccess parameter and can only be reconnected from the local computer. # to fix the warning the session must be created with a elevated prompt
@@ -181,15 +190,15 @@ catch {
 
 # Send results
 $mailboxes = $getExoMailboxes.mailboxes
-foreach($mailbox in $mailboxes){
+foreach ($mailbox in $mailboxes) {
     $outputContext.Permissions.Add(
-    @{
-        DisplayName    = "Shared Mailbox - $($mailbox.DisplayName)";
-        Identification = @{
-            Reference = $mailbox.Guid;
-            DisplayName = "Shared Mailbox - $($mailbox.DisplayName)";
-            Permissions = @("Full Access","Send As"); # Options:  Full Access,Send As, Send on Behalf
+        @{
+            DisplayName    = "Shared Mailbox - $($mailbox.DisplayName)";
+            Identification = @{
+                Reference   = $mailbox.Guid;
+                DisplayName = "Shared Mailbox - $($mailbox.DisplayName)";
+                Permissions = @("Full Access", "Send As"); # Options:  Full Access,Send As, Send on Behalf
+            }
         }
-    }
-)
+    )
 }

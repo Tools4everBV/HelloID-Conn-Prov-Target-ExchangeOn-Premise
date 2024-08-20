@@ -31,22 +31,27 @@ If you want to create Exchange On-Premise users, please use the **built-in Micro
 The following lifecycle actions are available:
 
 
-| Action                                                             | Description                                                           |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| create.ps1                                                         | PowerShell _create_ lifecycle action                                  |
-| permissions/groups/grantPermission.ps1                             | PowerShell _grant_ lifecycle action                                   |
-| permissions/groups/revokePermission.ps1                            | PowerShell _revoke_ lifecycle action                                  |
-| permissions/groups/permissions.ps1                                 | PowerShell _permissions_ lifecycle action                             |
-| permissions/sharedMailboxes/grantPermission.ps1                    | PowerShell _grant_ lifecycle action                                   |
-| permissions/sharedMailboxes/revokePermission.ps1                   | PowerShell _revoke_ lifecycle action                                  |
-| permissions/sharedMailboxes/permissions.ps1                        | PowerShell _permissions_ lifecycle action                             |
-| permissions/sharedMailboxesDynamic/subPermissions.ps1              | PowerShell _grant_, _update_ & _revoke_ lifecycle action              |
-| permissions/sharedMailboxesDynamic/permissions.ps1                 | PowerShell _permissions_ lifecycle action                             |
-| resources/groups/resources.ps1                                     | PowerShell _resources_ lifecycle action                               |
-| resources/sharedMailboxes/resources.ps1                            | PowerShell _resources_ lifecycle action                               |
-| configuration.json                                                 | Default _configuration.json_                                          |
-| fieldMapping.json                                                  | Default _fieldMapping.json_                                           |
-| postAdAction/postAdAction.create.DisableExchangeActiveSync_OWA.ps1 | Post-AD-action used in builtin AD-connector _create_ lifecycle action |
+| Action                                                             | Description                                                                   |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| create.ps1                                                         | PowerShell _create_ lifecycle action                                          |
+| enable.ps1                                                         | PowerShell _enable_ lifecycle action                                          |
+| disable.ps1                                                        | PowerShell _disable_ lifecycle action                                         |
+| permissions/groups/grantPermission.ps1                             | PowerShell _grant_ lifecycle action for groups                                |
+| permissions/groups/revokePermission.ps1                            | PowerShell _revoke_ lifecycle action for groups                               |
+| permissions/groups/permissions.ps1                                 | PowerShell _permissions_ lifecycle action for groups                          |
+| permissions/sharedMailboxes/grantPermission.ps1                    | PowerShell _grant_ lifecycle action for shared mailboxes                      |
+| permissions/sharedMailboxes/revokePermission.ps1                   | PowerShell _revoke_ lifecycle action for shared mailboxes                     |
+| permissions/sharedMailboxes/permissions.ps1                        | PowerShell _permissions_ lifecycle action for shared mailboxes                |
+| permissions/sharedMailboxesDynamic/subPermissions.ps1              | PowerShell _grant_, _update_ & _revoke_ lifecycle action for shared mailboxes |
+| permissions/sharedMailboxesDynamic/permissions.ps1                 | PowerShell _permissions_ lifecycle action for shared mailboxes                |
+| resources/groups/resources.ps1                                     | PowerShell _resources_ lifecycle action for groups                            |
+| resources/sharedMailboxes/resources.ps1                            | PowerShell _resources_ lifecycle action for shared mailboxes                  |
+| configuration.json                                                 | Default _configuration.json_                                                  |
+| fieldMapping.json                                                  | Default _fieldMapping.json_                                                   |
+| correlateOnly/create.ps1                                           | PowerShell _create_ lifecycle action for only correlating                     |
+| correlateOnly/configuration.json                                   | Default _configuration.json_ for only correlating                             |
+| correlateOnly/fieldMapping.json                                    | Default _fieldMapping.json_ for only correlating                               |
+| postAdAction/postAdAction.create.DisableExchangeActiveSync_OWA.ps1 | Post-AD-action used in builtin AD-connector _create_ lifecycle action         |
 
 ## Requirements
 - Execute the cmdlet **Enable-PsRemoting** on the **Exchange server** to which you want to connect.

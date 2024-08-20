@@ -140,8 +140,7 @@ try {
     foreach ($warningLog in $warningLogs) { Write-Warning $warningLog }
     $errorLogs = $createSessionResult.errorLogs
     foreach ($errorLog in $errorLogs) { Write-Warning $errorLog }
-        
-    # Determine if a user needs to be [created] or [correlated]                
+                    
     try {
                 
         $getExchangeUser = Invoke-Command -Session $remoteSession -ScriptBlock {
@@ -153,10 +152,6 @@ try {
         if ($getExchangeUser.Name.Count -eq 0) {
             Write-Information "Could not find mailbox with identity [$($actionContext.Data.userPrincipalName)]"                
             $action = 'NotFound'
-            $auditLogs.Add([PSCustomObject]@{
-                    Message = "$action mailbox for: [$($actionContext.Data.userPrincipalName)] will be executed."
-                    IsError = $false
-                })
         }
         if ($getExchangeUser.Name.Count -gt 0) {            
             Write-Information "Correlation found mailbox for: [$($actionContext.Data.userPrincipalName)]"
@@ -170,11 +165,7 @@ try {
     catch { 
         if ($_.Exception.ErrorRecord.CategoryInfo.Reason -eq "ManagementObjectNotFoundException") {
             Write-Warning "Could not find mailbox with identity [$($actionContext.Data.userPrincipalName)]"
-            $action = 'NotFound'
-            $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = "Could not find mailbox with identity [$($actionContext.Data.userPrincipalName)]"
-                    IsError = $false
-                })                    
+            $action = 'NotFound'                 
         }
         else {
             if (-Not [string]::IsNullOrEmpty($_.Exception.InnerExceptions)) {

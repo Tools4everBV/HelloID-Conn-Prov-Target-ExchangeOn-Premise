@@ -244,8 +244,7 @@ try {
                                     Action  = "CreateResource"
                                     IsError = $false
                                 })
-                        }
-                            
+                        }      
                     }
                 }
                 catch {

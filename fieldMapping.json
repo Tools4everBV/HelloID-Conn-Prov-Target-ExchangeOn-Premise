@@ -3,7 +3,7 @@
   "MappingFields": [
     {
       "Name": "ExchangeGuid",
-      "Description": "",
+      "Description": "[Mandatory]",
       "Type": "Text",
       "MappingActions": [
         {
@@ -19,7 +19,7 @@
     },
     {
       "Name": "userPrincipalName",
-      "Description": "",
+      "Description": "[Mandatory]",
       "Type": "Text",
       "MappingActions": [
         {
@@ -29,7 +29,7 @@
             "Disable"
           ],
           "MappingMode": "Complex",
-          "Value": "\"function getUserPrincipalName() {\\r\\n    let upn = '';\\r\\n\\r\\n    if (typeof Person.Accounts._d2681fd668374f97b18827a6bed92269.userPrincipalName !== 'undefined' && Person.Accounts._d2681fd668374f97b18827a6bed92269.userPrincipalName) {\\r\\n        upn = Person.Accounts._d2681fd668374f97b18827a6bed92269.userPrincipalName;\\r\\n    }\\r\\n\\r\\n    return upn;\\r\\n}\\r\\n\\r\\ngetUserPrincipalName()\"",
+          "Value": "\"function getUserPrincipalName() {\\r\\n    let upn = '';\\r\\n\\r\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.userPrincipalName !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.userPrincipalName) {\\r\\n        upn = Person.Accounts.MicrosoftActiveDirectory.userPrincipalName;\\r\\n    }\\r\\n\\r\\n    return upn;\\r\\n}\\r\\n\\r\\ngetUserPrincipalName()\"",
           "UsedInNotifications": false,
           "StoreInAccountData": false
         }
@@ -37,7 +37,7 @@
     },
     {
       "Name": "mail",
-      "Description": "",
+      "Description": "[Mandatory]",
       "Type": "Text",
       "MappingActions": [
         {
@@ -45,7 +45,7 @@
             "Create"
           ],
           "MappingMode": "Complex",
-          "Value": "\"function getEmail() {\\r\\n    let mail = '';\\r\\n\\r\\n    if (typeof Person.Accounts._d2681fd668374f97b18827a6bed92269.mail !== 'undefined' && Person.Accounts._d2681fd668374f97b18827a6bed92269.mail) {\\r\\n        mail = Person.Accounts._d2681fd668374f97b18827a6bed92269.mail;\\r\\n    }\\r\\n\\r\\n    return mail;\\r\\n}\\r\\n\\r\\ngetEmail()\"",
+          "Value": "\"function getEmail() {\\r\\n    let mail = '';\\r\\n\\r\\n    if (typeof Person.Accounts.MicrosoftActiveDirectory.mail !== 'undefined' && Person.Accounts.MicrosoftActiveDirectory.mail) {\\r\\n        mail = Person.Accounts.MicrosoftActiveDirectory.mail;\\r\\n    }\\r\\n\\r\\n    return mail;\\r\\n}\\r\\n\\r\\ngetEmail()\"",
           "UsedInNotifications": false,
           "StoreInAccountData": false
         }

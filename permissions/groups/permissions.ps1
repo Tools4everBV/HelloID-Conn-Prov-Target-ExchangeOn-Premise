@@ -13,9 +13,9 @@ switch ($($actionContext.Configuration.config.isDebug)) {
 }
 
 # Used to connect to Exchange using user credentials (MFA not supported).
-$ConnectionUri        = $actionContext.Configuration.exchange.ConnectionUri
-$Username             = $actionContext.Configuration.exchange.username
-$Password             = $actionContext.Configuration.exchange.password
+$ConnectionUri = $actionContext.Configuration.exchange.ConnectionUri
+$Username = $actionContext.Configuration.exchange.username
+$Password = $actionContext.Configuration.exchange.password
 $AuthenticationMethod = $actionContext.Configuration.exchange.authenticationmode
 
 #region functions
@@ -38,16 +38,18 @@ function Set-PSSession {
             $sessionObject = Get-PSSession -ComputerName $env:computername -Name $PSSessionName -ErrorAction stop
         }        
         Write-Verbose "Remote Powershell session is found, Name: $($sessionObject.Name), ComputerName: $($sessionObject.ComputerName)"
-    } catch {
+    }
+    catch {
         Write-Verbose "Remote Powershell session not found: $($_)"
     }
 
     if ($null -eq $sessionObject) { 
         try {
             $remotePSSessionOption = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 5).TotalMilliseconds
-            $sessionObject         = New-PSSession -ComputerName $env:computername -EnableNetworkAccess:$true -Name $PSSessionName -SessionOption $remotePSSessionOption
+            $sessionObject = New-PSSession -ComputerName $env:computername -EnableNetworkAccess:$true -Name $PSSessionName -SessionOption $remotePSSessionOption
             Write-Verbose "Remote Powershell session is created, Name: $($sessionObject.Name), ComputerName: $($sessionObject.ComputerName)"
-        } catch {
+        }
+        catch {
             throw "Couldn't created a PowerShell Session: $($_.Exception.Message)"
         }
     }
@@ -66,24 +68,25 @@ try {
     # if it does not exist create new session to exchange in remote session     
     $createSessionResult = Invoke-Command -Session $remoteSession -ScriptBlock {
         # Create array for logging since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands
-        $verboseLogs     = [System.Collections.ArrayList]::new()
+        $verboseLogs = [System.Collections.ArrayList]::new()
         $informationLogs = [System.Collections.ArrayList]::new()
-        $warningLogs     = [System.Collections.ArrayList]::new()
-        $errorLogs       = [System.Collections.ArrayList]::new()
+        $warningLogs = [System.Collections.ArrayList]::new()
+        $errorLogs = [System.Collections.ArrayList]::new()
 
         # Check if Exchange Connection already exists
-        try{
+        try {
             $null = Get-User -ResultSize 1 -ErrorAction Stop | Out-Null
             $connectedToExchange = $true
-        }catch{
-            if($_.Exception.Message -like "The term 'Get-User' is not recognized as the name of a cmdlet, function, script file, or operable program.*"){
+        }
+        catch {
+            if ($_.Exception.Message -like "The term 'Get-User' is not recognized as the name of a cmdlet, function, script file, or operable program.*") {
                 $connectedToExchange = $false
             }
         }
         
         # Connect to Exchange
-        try{
-            if($connectedToExchange -eq $false){
+        try {
+            if ($connectedToExchange -eq $false) {
                 $connectionUri = $using:ConnectionUri
                 $authenticationMethod = $using:AuthenticationMethod
                 $password = $using:Password
@@ -98,43 +101,46 @@ try {
                 $exchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $credential -Authentication $authenticationMethod -AllowRedirection -SessionOption $sessionOption -EnableNetworkAccess:$false -ErrorAction Stop
                 $null = Import-PSSession $exchangeSession
                 [Void]$informationLogs.Add("Successfully connected to Exchange: $connectionUri")
-            }else{
+            }
+            else {
                 [Void]$verboseLogs.Add("Already connected to Exchange")
             }
         }
         catch {
             if (-Not [string]::IsNullOrEmpty($_.Exception.InnerExceptions)) {
                 $errorMessage = "$($_.Exception.InnerExceptions)"
-            }else{
+            }
+            else {
                 $errorMessage = "$($_.Exception.Message) $($_.ScriptStackTrace)"
             }
             [Void]$warningLogs.Add($errorMessage)
             throw "Could not connect to Exchange, error: $_"
-        } finally {
+        }
+        finally {
             $returnobject = @{
                 verboseLogs     = $verboseLogs
                 informationLogs = $informationLogs
                 warningLogs     = $warningLogs
                 errorLogs       = $errorLogs
             }
-            Remove-Variable ("verboseLogs","informationLogs","warningLogs","errorLogs")     
+            Remove-Variable ("verboseLogs", "informationLogs", "warningLogs", "errorLogs")     
             Write-Output $returnobject 
         }
     }
 
     # Log the data from logging arrarys (since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands)
     $verboseLogs = $createSessionResult.verboseLogs
-    foreach($verboseLog in $verboseLogs){ Write-Verbose $verboseLog }
+    foreach ($verboseLog in $verboseLogs) { Write-Verbose $verboseLog }
     $informationLogs = $createSessionResult.informationLogs
-    foreach($informationLog in $informationLogs){ Write-Information $informationLog }
+    foreach ($informationLog in $informationLogs) { Write-Information $informationLog }
     $warningLogs = $createSessionResult.warningLogs
-    foreach($warningLog in $warningLogs){ Write-Warning $warningLog }
+    foreach ($warningLog in $warningLogs) { Write-Warning $warningLog }
     $errorLogs = $createSessionResult.errorLogs
-    foreach($errorLog in $errorLogs){ Write-Warning $errorLog }
+    foreach ($errorLog in $errorLogs) { Write-Warning $errorLog }
 
     # Get Exchange groups
     $getExchangeGroups = Invoke-Command -Session $remoteSession -ScriptBlock {
-        try{
+        try {
             # Create array for logging since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands
             $verboseLogs = [System.Collections.ArrayList]::new()
             $informationLogs = [System.Collections.ArrayList]::new()
@@ -146,34 +152,37 @@ try {
             # Do not get all groups using "Get-Group", since we cannot manage Security Groups (they have to be managed from Microsoft AD) 
             $groups = Get-DistributionGroup -ResultSize Unlimited
             [Void]$informationLogs.Add("Finished searching for Exchange Groups. Found [$($groups.id.Count) groups]")
-        } catch {
+        }
+        catch {
             throw "Could not gather Exchange groups. Error: $_"
-        } finally {
+        }
+        finally {
             $returnobject = @{
-                groups         = $groups
+                groups          = $groups
                 verboseLogs     = $verboseLogs
                 informationLogs = $informationLogs
                 warningLogs     = $warningLogs
                 errorLogs       = $errorLogs
             }
-            Remove-Variable ("groups","verboseLogs","informationLogs","warningLogs","errorLogs")     
+            Remove-Variable ("groups", "verboseLogs", "informationLogs", "warningLogs", "errorLogs")     
             Write-Output $returnobject 
         }
     }
 
     # Log the data from logging arrarys (since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands)
     $verboseLogs = $getExchangeGroups.verboseLogs
-    foreach($verboseLog in $verboseLogs){ Write-Verbose $verboseLog }
+    foreach ($verboseLog in $verboseLogs) { Write-Verbose $verboseLog }
     $informationLogs = $getExchangeGroups.informationLogs
-    foreach($informationLog in $informationLogs){ Write-Information $informationLog }
+    foreach ($informationLog in $informationLogs) { Write-Information $informationLog }
     $warningLogs = $getExchangeGroups.warningLogs
-    foreach($warningLog in $warningLogs){ Write-Warning $warningLog }
+    foreach ($warningLog in $warningLogs) { Write-Warning $warningLog }
     $errorLogs = $getExchangeGroups.errorLogs
-    foreach($errorLog in $errorLogs){ Write-Warning $errorLog }
+    foreach ($errorLog in $errorLogs) { Write-Warning $errorLog }
 }
 catch {
     throw "Could not gather Exchange groups. Error: $_"
-} finally {
+}
+finally {
     Start-Sleep 1
     if ($null -ne $remoteSession) {           
         Disconnect-PSSession $remoteSession -WarningAction SilentlyContinue | out-null   # Suppress Warning: PSSession Connection was created using the EnableNetworkAccess parameter and can only be reconnected from the local computer. # to fix the warning the session must be created with a elevated prompt
@@ -184,8 +193,8 @@ catch {
 
 # Send results
 $groups = $getExchangeGroups.groups
-foreach($group in $groups){
-    switch($group.RecipientType){
+foreach ($group in $groups) {
+    switch ($group.RecipientType) {
         "MailUniversalSecurityGroup" {
             $groupType = "Mail-enabled Security Group"
         }
@@ -195,12 +204,12 @@ foreach($group in $groups){
     }
     
     $outputContext.Permissions.Add(
-    @{
-        DisplayName    = "$($groupType) - $($group.DisplayName)";
-        Identification = @{
-            Reference = $group.Guid;
-            DisplayName = "$($groupType) - $($group.DisplayName)";        
-        }
-    })
+        @{
+            DisplayName    = "$($groupType) - $($group.DisplayName)";
+            Identification = @{
+                Reference   = $group.Guid;
+                DisplayName = "$($groupType) - $($group.DisplayName)";        
+            }
+        })
      
 }
