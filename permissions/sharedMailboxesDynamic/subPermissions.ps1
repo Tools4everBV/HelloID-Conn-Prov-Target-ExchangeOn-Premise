@@ -255,6 +255,8 @@ try {
                         $account = $using:actionContext.References.Account
                         $permission = $using:permission
                         $permissionSuccess = $false
+                        $AutoMapping = $true
+                        
                         $success = $false
                         $auditLogs = [Collections.Generic.List[PSCustomObject]]::new()
 
@@ -270,7 +272,7 @@ try {
                                       
                             
                             [Void]$verboseLogs.Add("Granting permission FullAccess to mailbox $($permission.Name) ($($permission.Value)) for user ($($account.UserPrincipalName))")
-                            $null = Add-MailboxPermission -Identity $($permission.Value) -AccessRights FullAccess -InheritanceType All -AutoMapping:$true -User $($account.Guid) -ErrorAction Stop
+                            $null = Add-MailboxPermission -Identity $($permission.Value) -AccessRights FullAccess -InheritanceType All -AutoMapping $AutoMapping -User $($account.Guid) -ErrorAction Stop
                             [Void]$verboseLogs.Add("FullAccess set on $($permission.Value) for $($account.UserPrincipalName)")
                             $auditLogs.Add([PSCustomObject]@{
                                     Action  = "GrantPermission"
