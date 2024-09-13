@@ -71,7 +71,14 @@ try {
 
     if (-Not($dryRun -eq $true)) {
         $enableArchiveMailboxResponse = Enable-RemoteMailbox @enableArchiveMailboxSplatParams
-    
+
+        $auditLogs.Add([PSCustomObject]@{
+                # Action  = "" # Optional
+                Message = "Post Action - Enabled archive mailbox for account with Identity: $($adUserIdentity | ConvertTo-Json)."
+                IsError = $true
+            })
+
+        # Additional Write-Information required as the auditlogs aren't currently shown in the entitlement history log
         Write-Information "Post Action - Enabled archive mailbox for account with Identity: $($adUserIdentity | ConvertTo-Json)."
     }
     else {
@@ -89,6 +96,13 @@ catch {
     $warningMessage = "Error at Line [$($ex.InvocationInfo.ScriptLineNumber)]: $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
 
     if ($auditMessage -like "*Recipient $($enableArchiveMailboxSplatParams.Identity) already has an archive*") {
+        $auditLogs.Add([PSCustomObject]@{
+                # Action  = "" # Optional
+                Message = "Skipped $($actionMessage). Reason: Recipient already has an archive."
+                IsError = $true
+            })
+    
+        # Additional Write-Information required as the auditlogs aren't currently shown in the entitlement history log
         Write-Information "Skipped $($actionMessage). Reason: Recipient already has an archive."
 
         # Treat existing archive as success
@@ -97,7 +111,14 @@ catch {
     else {
         Write-Warning "Post Action - $warningMessage"
 
-        Write-Error "Post Action - $auditMessage"
+        $auditLogs.Add([PSCustomObject]@{
+                # Action  = "" # Optional
+                Message = $auditMessage
+                IsError = $true
+            })
+        
+        # Additional Write-Warning (do not use Write-Error as this will cause the auditlog to not be displayed) required as the auditlogs aren't currently shown in the entitlement history log
+        Write-Warning "Post Action - $auditMessage"
     }
 }
 finally {
