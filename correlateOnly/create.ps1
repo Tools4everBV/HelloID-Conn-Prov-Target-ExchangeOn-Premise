@@ -1,126 +1,135 @@
-##############################################################
-# HelloID-Conn-Prov-Target-Exchange-OnPremise-Create-Correlate
+#################################################
+# HelloID-Conn-Prov-Target-Microsoft-Exchange-On-Premises-Create
+# Correlate to account
 # PowerShell V2
-##############################################################
+#################################################
 
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
-# Set to false at start, at the end, only when no error occurs it is set to true
-$outputContext.Success = $false
-
 # Set debug logging
-switch ($($actionContext.Configuration.config.isDebug)) {
-    $true { $VerbosePreference = 'Continue' }
-    $false { $VerbosePreference = 'SilentlyContinue' }
+switch ($actionContext.Configuration.isDebug) {
+    $true { $VerbosePreference = "Continue" }
+    $false { $VerbosePreference = "SilentlyContinue" }
 }
+$InformationPreference = "Continue"
+$WarningPreference = "Continue"
 
-
-#Exchange
-$ConnectionUri = $actionContext.Configuration.exchange.ConnectionUri
-$Username = $actionContext.Configuration.exchange.username
-$Password = $actionContext.Configuration.exchange.password
-$AuthenticationMethod = $actionContext.Configuration.exchange.authenticationmode
-
-#region Supporting Functions
-function Set-PSSession {    
-    [OutputType([System.Management.Automation.Runspaces.PSSession])]  
-    param(       
+#region functions
+function Set-PSSession {
+    [OutputType([System.Management.Automation.Runspaces.PSSession])]
+    param( 
         [Parameter(mandatory)]
         [string]$PSSessionName
     )
-    try {                        
+    try {
         $sessionObject = Get-PSSession -ComputerName $env:computername -Name $PSSessionName -ErrorAction stop
         if ($null -eq $sessionObject) {
-            # Due to some inconsistency, the Get-PSSession does not always throw an error  
+            # Due to some inconsistency, the Get-PSSession does not always throw an error
             throw "The command cannot find a PSSession that has the name '$PSSessionName'."
         }
         # To Avoid using mutliple sessions at the same time.
         if ($sessionObject.length -gt 1) {
             Remove-PSSession -Id ($sessionObject.id | Sort-Object | select-object -first 1)
             $sessionObject = Get-PSSession -ComputerName $env:computername -Name $PSSessionName -ErrorAction stop
-        }        
-        Write-Verbose -Verbose "Remote Powershell session is found, Name: $($sessionObject.Name), ComputerName: $($sessionObject.ComputerName)"
+        }
+        Write-Verbose "Remote Powershell session is found, Name: $($sessionObject.Name), ComputerName: $($sessionObject.ComputerName)"
     }
     catch {
-        Write-Verbose -Verbose "Remote Powershell session not found: $($_)"
+        Write-Verbose "Remote Powershell session not found: $($_)"
     }
 
     if ($null -eq $sessionObject) { 
         try {
             $remotePSSessionOption = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 5).TotalMilliseconds
             $sessionObject = New-PSSession -ComputerName $env:computername -EnableNetworkAccess:$true -Name $PSSessionName -SessionOption $remotePSSessionOption
-            Write-Verbose -Verbose "Remote Powershell session is created, Name: $($sessionObject.Name), ComputerName: $($sessionObject.ComputerName)"
+            Write-Verbose "Remote Powershell session is created, Name: $($sessionObject.Name), ComputerName: $($sessionObject.ComputerName)"
         }
         catch {
             throw "Couldn't created a PowerShell Session: $($_.Exception.Message)"
         }
     }
-    #Write-Verbose -Verbose "Remote Powershell Session '$($sessionObject.Name)' State: '$($sessionObject.State)' Availability: '$($sessionObject.Availability)'"
+
     if ($sessionObject.Availability -eq "Busy") {
         throw "Remote session is in Use" 
     }
     Write-Output $sessionObject
 }
+#endregion functions
 
-function Get-ErrorMessage {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory,
-            ValueFromPipeline
-        )]
-        [object]$ErrorObject
-    )
-    process {
-        $errorMessage = [PSCustomObject]@{
-            VerboseErrorMessage = $null
-            AuditErrorMessage   = $null
-        }
-
-        $errorMessage.VerboseErrorMessage = $ErrorObject.Exception.Message
-        $errorMessage.AuditErrorMessage = $ErrorObject.Exception.Message
-
-        Write-Output $errorMessage
-    }
-}
-#endregion Supporting Functions
-
-# Check if we should try to correlate the account
-# Get current AD account
 try {
-    if ($actionContext.CorrelationConfiguration.Enabled) {
-        $correlationProperty = $actionContext.CorrelationConfiguration.accountField
-        $correlationValue = $actionContext.CorrelationConfiguration.accountFieldValue
-    
-        if ([string]::IsNullOrEmpty($correlationProperty)) {
-            Write-Warning "Correlation is enabled but not configured correctly."
-            throw "Correlation is enabled but not configured correctly."
-        }
-    
-        if ([string]::IsNullOrEmpty($correlationValue)) {
-            Write-Warning "The correlation value for [$correlationProperty] is empty. This is likely a scripting issue."
-            throw "The correlation value for [$correlationProperty] is empty. This is likely a scripting issue."
-        }
-    }
-    else {
-        Write-Warning "Correlation is enabled but not configured correctly."
-        throw "Configuration of correlation is madatory."
+    #region Create or connect to existing Remote Powershell session, required to manage the sessions
+    $actionMessage = "connecting to Powershell session [HelloID_Prov_Exchange]"
+
+    $settPsSessionSplatParams = @{
+        PSSessionName = "HelloID_Prov_Exchange"
+        Verbose       = $false
+        ErrorAction   = "Stop"
     }
 
-    try {
-        $remoteSession = Set-PSSession -PSSessionName 'HelloID_Prov_Exchange'
-        Connect-PSSession $remoteSession | out-null                                                                            
+    $setPsSessionResponse = Set-PSSession @settPsSessionSplatParams
+    $remoteSession = $setPsSessionResponse
 
-        # if it does not exist create new session to exchange in remote session     
-        $createSessionResult = Invoke-Command -Session $remoteSession -ScriptBlock {
+    $connectPsSessionSplatParams = @{
+        Session     = $remoteSession
+        Verbose     = $false
+        ErrorAction = "Stop"
+    }
+
+    $connectPsSessionResponse = Connect-PSSession @connectPsSessionSplatParams
+
+    Write-Verbose "Connected to Powershell session [HelloID_Prov_Exchange]"
+    #endregion Create or connect to existing Remote Powershell session, required to manage the sessions
+
+    #region Invoke command at remote session where the exchange session resides
+    $actionMessage = "invoking command at remote session with ID [$($remoteSession.id)]"
+    $invokeCommandResponse = Invoke-Command -Session $remoteSession -ScriptBlock {
+        try {
+            # Pass the local variables to the remote session
+            $actionContext = $using:actionContext
+            $personContext = $using:personContext
+            $outputContext = $using:outputContext
+
             # Create array for logging since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands
-            $verboseLogs = [System.Collections.ArrayList]::new()
-            $informationLogs = [System.Collections.ArrayList]::new()
-            $warningLogs = [System.Collections.ArrayList]::new()
-            $errorLogs = [System.Collections.ArrayList]::new()
-    
-            # Check if Exchange Connection already exists
+            $logs = @{
+                Verbose     = [System.Collections.ArrayList]::new()
+                Information = [System.Collections.ArrayList]::new()
+                Warning     = [System.Collections.ArrayList]::new()
+            }
+
+            #region account
+            # Define correlation
+            $correlationField = $actionContext.CorrelationConfiguration.accountField
+            $correlationValue = $actionContext.CorrelationConfiguration.personFieldValue
+
+            # Define account object
+            $account = [PSCustomObject]$actionContext.Data.PsObject.Copy()
+
+            # Define properties to query
+            $accountPropertiesToQuery = @("guid") + $account.PsObject.Properties.Name | Select-Object -Unique
+            #endRegion account
+
+            #region Verify correlation configuration and properties
+            $actionMessage = "verifying correlation configuration and properties"
+
+            if ($actionContext.CorrelationConfiguration.Enabled -eq $true) {
+                if ([string]::IsNullOrEmpty($correlationField)) {
+                    throw "Correlation is enabled but not configured correctly."
+                }
+
+                if ([string]::IsNullOrEmpty($correlationValue)) {
+                    throw "The correlation value for [$correlationField] is empty. This is likely a mapping issue."
+                }
+            }
+            else {
+                throw "Correlation is disabled while this connector only supports correlation."
+            }
+            #endregion Verify correlation configuration and properties
+
+            #region Check if Exchange Connection already exists
             try {
+                $actionMessage = "checking if Exchange Connection already exists"
+
                 $null = Get-User -ResultSize 1 -ErrorAction Stop | Out-Null
                 $connectedToExchange = $true
             }
@@ -129,194 +138,174 @@ try {
                     $connectedToExchange = $false
                 }
             }
-            
-            # Connect to Exchange
-            try {                        
-                if ($connectedToExchange -eq $false) {
-                    $connectionUri = $using:ConnectionUri
-                    $authenticationMethod = $using:AuthenticationMethod
-                    $password = $using:Password
-                    $username = $using:Username
-    
-                    [Void]$verboseLogs.Add("Connecting to Exchange: $connectionUri..")
-    
-                    # Connect to Exchange in an unattended scripting scenario using user credentials (MFA not supported).
-                    $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-                    $credential = [System.Management.Automation.PSCredential]::new($username, $securePassword)
-                    $sessionOption = New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck -IdleTimeout (New-TimeSpan -Minutes 5).TotalMilliseconds # The session does not time out while the session is active. Please enter this value to time out the Exchangesession when the session is removed
-                    $exchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $credential -Authentication $authenticationMethod -AllowRedirection -SessionOption $sessionOption -EnableNetworkAccess:$false -ErrorAction Stop
-                    $null = Import-PSSession $exchangeSession
-                    [Void]$informationLogs.Add("Successfully connected to Exchange: $connectionUri")
+            #endregion Check if Exchange Connection already exists
+
+            if ($connectedToExchange -eq $false) {
+                #region Connect to Exchange On-Premises
+                $actionMessage = "connecting to Exchange with ConnectionUri: $($actionContext.Configuration.connectionUri)"
+
+                # Connect to Exchange On-Premises in an unattended scripting scenario using user credentials (MFA not supported).
+                $securePassword = ConvertTo-SecureString $($actionContext.Configuration.password) -AsPlainText -Force
+                $credential = [System.Management.Automation.PSCredential]::new($($actionContext.Configuration.username), $securePassword)
+                $sessionOption = New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck -IdleTimeout (New-TimeSpan -Minutes 5).TotalMilliseconds # The session does not time out while the session is active. Please enter this value to time out the Exchangesession when the session is removed
+                $exchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $($actionContext.Configuration.connectionUri) -Credential $credential -Authentication $($actionContext.Configuration.authenticationmode) -AllowRedirection -SessionOption $sessionOption -EnableNetworkAccess:$false -ErrorAction Stop
+                $null = Import-PSSession $exchangeSession
+
+                [Void]$logs.Information.Add("Connected to Exchange with ConnectionUri: $($actionContext.Configuration.connectionUri)")
+                #endregion Connect to Exchange On-Premises
+            }
+            else {
+                [Void]$logs.Verbose.Add("Already connected to Exchange")
+            }
+
+            #region Get account
+            # Docs: https://learn.microsoft.com/en-us/powershell/module/exchange/get-user?view=exchange-ps
+            $actionMessage = "querying account where [$($correlationField)] = [$($correlationValue)]"
+
+            $getMicrosoftExchangeOnPremisesAccountSplatParams = @{
+                Filter      = "$($correlationField) -eq '$($correlationValue)'"
+                Verbose     = $false
+                ErrorAction = "Stop"
+            }
+
+            $getMicrosoftExchangeOnPremisesAccountResponse = $null
+            $getMicrosoftExchangeOnPremisesAccountResponse = Get-User @getMicrosoftExchangeOnPremisesAccountSplatParams
+            $correlatedAccount = $getMicrosoftExchangeOnPremisesAccountResponse | Select-Object $accountPropertiesToQuery
+
+            [Void]$logs.Verbose.Add("Queried account where [$($correlationField)] = [$($correlationValue)]. Result: $($correlatedAccount| ConvertTo-Json)")
+            #endregion Get account
+
+            #region Calulate action
+            $actionMessage = "calculating action"
+            if (($correlatedAccount | Measure-Object).count -eq 1) {
+                $actionAccount = "Correlate"
+            }
+            elseif (($correlatedAccount | Measure-Object).count -eq 0) {
+                $actionAccount = "NotFound"
+            }
+            elseif (($correlatedAccount | Measure-Object).count -gt 1) {
+                $actionAccount = "MultipleFound"
+            }
+            #endregion Calulate action
+
+            #region Process
+            switch ($actionAccount) {
+                "Correlate" {
+                    #region Correlate account
+                    $actionMessage = "correlating to account"
+
+                    $outputContext.AccountReference = "$($correlatedAccount.Guid)"
+                    $outputContext.Data = $correlatedAccount.PsObject.Copy()
+
+                    $outputContext.AuditLogs.Add([PSCustomObject]@{
+                            Action  = "CorrelateAccount" # Optionally specify a different action for this audit log
+                            Message = "Correlated to account with AccountReference: $($outputContext.AccountReference | ConvertTo-Json) on [$($correlationField)] = [$($correlationValue)]."
+                            IsError = $false
+                        })
+
+                    $outputContext.AccountCorrelated = $true
+                    #endregion Correlate account
+
+                    break
                 }
-                else {
-                    [Void]$verboseLogs.Add("Already connected to Exchange")
+
+                "MultipleFound" {
+                    #region Multiple accounts found
+                    $actionMessage = "correlating to account"
+
+                    # Throw terminal error
+                    throw "Multiple accounts found where [$($correlationField)] = [$($correlationValue)]. Please correct this so the persons are unique."
+                    #endregion Multiple accounts found
+
+                    break
+                }
+
+                "NotFound" {
+                    #region No account found
+                    $actionMessage = "correlating to account"
+
+                    # Throw terminal error
+                    throw "No account found where [$($correlationField)] = [$($correlationValue)] while this connector only supports correlation."
+                    #endregion No account found
+
+                    break
                 }
             }
-            catch {
-                if (-Not [string]::IsNullOrEmpty($_.Exception.InnerExceptions)) {
-                    $errorMessage = "$($_.Exception.InnerExceptions)"
-                }
-                else {
-                    $errorMessage = "$($_.Exception.Message) $($_.ScriptStackTrace)"
-                }
-                [Void]$warningLogs.Add($errorMessage)
-                throw "Could not connect to Exchange, error: $_"
-            }
-            finally {                        
-                $returnobject = @{
-                    verboseLogs     = $verboseLogs
-                    informationLogs = $informationLogs
-                    warningLogs     = $warningLogs
-                    errorLogs       = $errorLogs
-                }
-                Remove-Variable ("verboseLogs", "informationLogs", "warningLogs", "errorLogs")                             
-                Write-Output $returnobject
-                        
-            }
+            #endregion Process
         }
-                
-        # Log the data from logging arrarys (since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands)
-        $verboseLogs = $createSessionResult.verboseLogs
-        foreach ($verboseLog in $verboseLogs) { Write-Verbose $verboseLog }
-        $informationLogs = $createSessionResult.informationLogs
-        foreach ($informationLog in $informationLogs) { Write-Information $informationLog }
-        $warningLogs = $createSessionResult.warningLogs
-        foreach ($warningLog in $warningLogs) { Write-Warning $warningLog }
-        $errorLogs = $createSessionResult.errorLogs
-        foreach ($errorLog in $errorLogs) { Write-Warning $errorLog }
+        catch {
+            $ex = $PSItem
 
-        # Get Exchange User
-        $getExchangeUser = Invoke-Command -Session $remoteSession -ScriptBlock {
-            try {                
-                $account = $using:outputContext.Data
+            $auditMessage = "Error $($actionMessage). Error: $($ex.Exception.Message)"
+            $warningMessage = "Error at Line [$($ex.InvocationInfo.ScriptLineNumber)]: $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
+ 
+            [Void]$logs.Warning.Add($warningMessage)
 
-                $success = $false
-                $auditLogs = [Collections.Generic.List[PSCustomObject]]::new()
-
-                # Create array for logging since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands
-                $verboseLogs = [System.Collections.ArrayList]::new()
-                $informationLogs = [System.Collections.ArrayList]::new()
-                $warningLogs = [System.Collections.ArrayList]::new()
-                $errorLogs = [System.Collections.ArrayList]::new()
-
-                if ([string]::IsNullOrEmpty($account.userPrincipalName)) { throw "No UserPrincipalName provided" }  
-            
-                [Void]$verboseLogs.Add("Identity: $($account.userPrincipalName)")
-                $user = Get-User -Identity $account.userPrincipalName -ErrorAction Stop
-
-                if ($user -eq $null) { throw "Failed to return a user" }
-
-                $aRef = @{
-                    Guid              = $user.Guid
-                    UserPrincipalName = $user.UserPrincipalName
-                }
-
-                [Void]$informationLogs.Add("Account correlated to $($aRef.userPrincipalName) ($($aRef.Guid))")
-
-                $success = $true;
-                $auditLogs.Add([PSCustomObject]@{
-                        Action  = "CreateAccount"
-                        Message = "Account correlated to $($aRef.userPrincipalName) ($($aRef.Guid))";
-                        IsError = $false;
-                    });
-            }
-            catch { 
-                throw $_
-            }
-            finally {
-                $returnobject = @{
-                    user            = $user
-                    aRef            = $aRef
-                    success         = $success
-                    auditLogs       = $auditLogs
-                    verboseLogs     = $verboseLogs
-                    informationLogs = $informationLogs
-                    warningLogs     = $warningLogs
-                    errorLogs       = $errorLogs
-                }
-                Remove-Variable ("account", "user", "success", "auditLogs", "verboseLogs", "informationLogs", "warningLogs", "errorLogs")     
-                Write-Output $returnobject 
-            }
+            throw $auditMessage
         }
-        $aRef = $getExchangeUser.aRef
-        $success = $getExchangeUser.success
-        $auditLogs = $getExchangeUser.auditLogs
+        finally {
+            $returnobject = @{
+                logs          = $logs
+                outputContext = $outputContext
+            }
 
-        # Log the data from logging arrarys (since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands)
-        $verboseLogs = $getExchangeUser.verboseLogs
-        foreach ($verboseLog in $verboseLogs) { Write-Verbose $verboseLog }
-        $informationLogs = $getExchangeUser.informationLogs
-        foreach ($informationLog in $informationLogs) { Write-Information $informationLog }
-        $warningLogs = $getExchangeUser.warningLogs
-        foreach ($warningLog in $warningLogs) { Write-Warning $warningLog }
-        $errorLogs = $getExchangeUser.errorLogs
-        foreach ($errorLog in $errorLogs) { Write-Warning $errorLog }
+            Write-Output $returnobject
 
-        foreach ($auditlog in $auditLogs) { 
-            $outputContext.AuditLogs.Add($auditlog)                
+            # Cleanup all variables
+            Get-Variable | Remove-Variable -ErrorAction SilentlyContinue
         }
+        #endregion Connect to Exchange On-Premises
     }
-    catch {
-        $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Action  = "CreateAccount"
-                Message = "Account failed to correlate:  $_"
-                IsError = $True
-            });    
-        Write-Warning $_;
+    #endregion Invoke command at remote session where the exchange session resides
+
+    # Set ouputContext with the outputContext from the remote command
+    $outputContext = $invokeCommandResponse.outputContext
+
+    # Log the data from logging arrarys (since the "normal" Write-Information isn't sent to HelloID as another PS session performs the commands)
+    # Log Verbose messages
+    foreach ($verboseLog in $invokeCommandResponse.logs.Verbose) { 
+        Write-Verbose $verboseLog 
     }
 
-    $outputContext.AccountReference = $getExchangeUser.aRef
-    $actionContext.Data.exchGuid = $getExchangeUser.aRef.Guid
-    
+    # Log Information messages
+    foreach ($informationLog in $invokeCommandResponse.logs.Information) { 
+        Write-Information $informationLog 
+    }
 
-    $outputContext.AuditLogs.Add([PSCustomObject]@{
-            Action  = "CreateAccount"
-            Message = "Successfully correlated to mailuser $($outputContext.Data.userPrincipalName) ($($outputContext.Data.employeeNumber))"
-            IsError = $false
-        })
+    # Log Warning messages
+    foreach ($warningLog in $invokeCommandResponse.logs.Warning) { 
+        Write-Warning $warningLog 
+    }
 }
 catch {
-    # Clean up error variables
-    $verboseErrorMessage = $null
-    $auditErrorMessage = $null
-
     $ex = $PSItem
-    if ( $($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-        $errorObject = Resolve-HTTPError -Error $ex
 
-        $verboseErrorMessage = $errorObject.ErrorMessage
+    $auditMessage = "Error $($actionMessage). Error: $($ex.Exception.Message)"
+    $warningMessage = "Error at Line [$($ex.InvocationInfo.ScriptLineNumber)]: $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
 
-        $auditErrorMessage = Resolve-MicrosoftGraphAPIErrorMessage -ErrorObject $errorObject.ErrorMessage
-    }
-
-    # If error message empty, fall back on $ex.Exception.Message
-    if ([String]::IsNullOrEmpty($verboseErrorMessage)) {
-        $verboseErrorMessage = $ex.Exception.Message
-    }
-    if ([String]::IsNullOrEmpty($auditErrorMessage)) {
-        $auditErrorMessage = $ex.Exception.Message
-    }
-
-    Write-Verbose "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($verboseErrorMessage)"
+    Write-Warning $warningMessage
 
     $outputContext.AuditLogs.Add([PSCustomObject]@{
-            Action  = "CreateAccount"
-            Message = "Error querying mailuser [$correlationValue]. Error Message: $auditErrorMessage"
-            IsError = $True
+            # Action= "" # Optional
+            Message = $auditMessage
+            IsError = $true
         })
 }
 finally {
-    if ($null -ne $remoteSession) {           
-        Disconnect-PSSession $remoteSession -WarningAction SilentlyContinue | out-null   # Suppress Warning: PSSession Connection was created using the EnableNetworkAccess parameter and can only be reconnected from the local computer. # to fix the warning the session must be created with a elevated prompt
+    #region Disconnect from Remote Powershell session
+    if ($null -ne $remoteSession) { 
+        Disconnect-PSSession $remoteSession -WarningAction SilentlyContinue | out-null # Suppress Warning: PSSession Connection was created using the EnableNetworkAccess parameter and can only be reconnected from the local computer. # to fix the warning the session must be created with a elevated prompt
         Write-Verbose "Remote Powershell Session '$($remoteSession.Name)' State: '$($remoteSession.State)' Availability: '$($remoteSession.Availability)'"
-    } 
-    
+    }
+    #endregion Disconnect from Remote Powershell session
+
     # Check if auditLogs contains errors, if no errors are found, set success to true
     if (-NOT($outputContext.AuditLogs.IsError -contains $true)) {
         $outputContext.Success = $true
     }
-    
-    $outputContext.Data = $actionContext.Data
+
+    # Check if accountreference is set, if not set, set this with default value as this must contain a value
+    if ([String]::IsNullOrEmpty($outputContext.AccountReference) -and $actionContext.DryRun -eq $true) {
+        $outputContext.AccountReference = "DryRun: Currently not available"
+    }
 }
-
-

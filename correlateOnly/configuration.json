@@ -1,6 +1,6 @@
 [
   {
-    "key": "exchange.connectionUri",
+    "key": "connectionUri",
     "type": "input",
     "defaultValue": "",
     "templateOptions": {
@@ -11,21 +11,21 @@
     }
   },
   {
-    "key": "exchange.username",
+    "key": "username",
     "type": "input",
     "defaultValue": "",
     "templateOptions": {
-      "label": "Exchange Username",
+      "label": "Username",
       "placeholder": "Account with enough privileges in AD and Exchange",
       "required": true
     }
   },
   {
-    "key": "exchange.password",
+    "key": "password",
     "type": "input",
     "defaultValue": "",
     "templateOptions": {
-      "label": "Exchange Password",
+      "label": "Password",
       "type": "password",
       "placeholder": "",
       "description": "",
@@ -33,10 +33,10 @@
     }
   },
   {
-    "key": "exchange.authenticationmode",
+    "key": "authenticationmode",
     "type": "select",
     "templateOptions": {
-      "label": "AUTHENTICATION MODE",
+      "label": "Authentication mode",
       "placeholder": "Please select an option",
       "options": [
         {
@@ -71,22 +71,12 @@
     }
   },
   {
-    "key": "exchange.sharedMailboxContainer",
-    "type": "input",
-    "defaultValue": "",
-    "templateOptions": {
-      "label": "OU with Shared Mailbox Users",
-      "placeholder": "OU=<container>,DC=domain,DC=local",
-      "description": "The AD container in which the SharedMailbox users exists",
-      "required": true
-    }
-  },
-  {
-    "key": "config.IsDebug",
+    "key": "isDebug",
     "type": "checkbox",
     "defaultValue": false,
     "templateOptions": {
-      "label": "Verbose logging for department group management",
+      "label": "Toggle debug logging",
+      "description": "When toggled, debug logging will be displayed",
       "required": false
     }
   }
