@@ -162,7 +162,7 @@ try {
             if ($getExchangeUser.Name.Count -eq 0) {
                 Write-Information "Could not find mailbox with identity [$($actionContext.Data.userPrincipalName)]"                
                 $action = 'CreateAccount'
-                $auditLogs.Add([PSCustomObject]@{
+                $outputContext.AuditLogs.Add([PSCustomObject]@{
                         Message = "$action mailbox for: [$($actionContext.Data.userPrincipalName)] will be executed."
                         IsError = $false
                     })
