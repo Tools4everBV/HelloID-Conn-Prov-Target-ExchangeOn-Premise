@@ -145,27 +145,27 @@ try {
     try {
                 
         $getExchangeUser = Invoke-Command -Session $remoteSession -ScriptBlock {
-            $account = $using:actionContext.Data
-            $correlatedMailbox = Get-Mailbox -Identity $account.userPrincipalName                                    
+            $aref = $using:actionContext.References.Account
+            $correlatedMailbox = Get-Mailbox -Identity $aref                                
             Write-Output $correlatedMailbox                    
         } -ErrorAction Stop                  
 
         if ($getExchangeUser.Name.Count -eq 0) {
-            Write-Information "Could not find mailbox with identity [$($actionContext.Data.userPrincipalName)]"                
+            Write-Information "Could not find mailbox with identity [$($actionContext.References.Account)] [$($actionContext.Data.userPrincipalName)]"                
             $action = 'NotFound'
         }
         if ($getExchangeUser.Name.Count -gt 0) {            
-            Write-Information "Correlation found mailbox for: [$($actionContext.Data.userPrincipalName)]"
+            Write-Information "Correlation found mailbox for: [$($actionContext.References.Account)] [$($actionContext.Data.userPrincipalName)]"
             $action = 'DisableAccount'            
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = "$action mailbox for: [$($actionContext.Data.userPrincipalName)] will be executed."
+                    Message = "$action mailbox for: [$($actionContext.References.Account)] [$($actionContext.Data.userPrincipalName)] will be executed."
                     IsError = $false
                 })
         }   
     } 
     catch { 
         if ($_.Exception.ErrorRecord.CategoryInfo.Reason -eq "ManagementObjectNotFoundException") {
-            Write-Warning "Could not find mailbox with identity [$($actionContext.Data.userPrincipalName)]"
+            Write-Warning "Could not find mailbox with identity [$($actionContext.References.Account)] [$($actionContext.Data.userPrincipalName)]"
             $action = 'NotFound'                  
         }
         else {
@@ -188,8 +188,8 @@ try {
                 
                 try {
                     Invoke-Command -Session $remoteSession -ScriptBlock {
-                        $account = $using:actionContext.Data
-                        Set-Mailbox -Identity $account.userPrincipalName -HiddenFromAddressListsEnabled $True                        
+                        $aref = $using:actionContext.References.Account
+                        Set-Mailbox -Identity $aref -HiddenFromAddressListsEnabled $True
                     } -ErrorAction Stop                    
                 }
                 catch { 
@@ -202,7 +202,7 @@ try {
             }
             $outputContext.Success = $true
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = 'Disable account was successful'
+                    Message = 'Disable mailbox was successful'
                     IsError = $false
                 })
             break
@@ -210,7 +210,7 @@ try {
 
         'NotFound' {
             Write-Information "Exchange-On-Premise account: [$($actionContext.References.Account)] could not be found, possibly indicating that it could be deleted"
-            $outputContext.Success = $false
+            $outputContext.Success = $true
             $outputContext.AuditLogs.Add([PSCustomObject]@{
                     Message = "Exchange-On-Premise account: [$($actionContext.References.Account)] could not be found, possibly indicating that it could be deleted"
                     IsError = $False
