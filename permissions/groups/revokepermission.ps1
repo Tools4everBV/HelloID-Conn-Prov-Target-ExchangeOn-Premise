@@ -163,6 +163,7 @@ try {
                 $account = $using:actionContext.References.Account
                 $permission = $using:actionContext.References.Permission
                 $person = $using:personContext.Person
+                $permissionDisplayName = $using:actionContext.PermissionDisplayName
 
                 $success = $false
                 $auditLogs = [Collections.Generic.List[PSCustomObject]]::new()
@@ -173,35 +174,35 @@ try {
                 $warningLogs = [System.Collections.ArrayList]::new()
                 $errorLogs = [System.Collections.ArrayList]::new()
 
-                [Void]$verboseLogs.Add("Revoking permission $($permission.DisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))")
+                [Void]$verboseLogs.Add("Revoking permission $($permissionDisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))")
                 $null = Remove-DistributionGroupMember -Identity $permission.Reference -Member $account -BypassSecurityGroupManagerCheck:$true -Confirm:$false -ErrorAction Stop
-                [Void]$informationLogs.Add("Successfully revoked permission $($permission.DisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))")
+                [Void]$informationLogs.Add("Successfully revoked permission $($permissionDisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))")
 
                 $success = $true
                 $auditLogs.Add([PSCustomObject]@{
                         Action  = "RevokePermission"
-                        Message = "Successfully revoked permission $($permission.DisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))"
+                        Message = "Successfully revoked permission $($permissionDisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))"
                         IsError = $false
                     }
                 )      
             }
             catch {
                 if ($_ -like "*isn't a member of the group*") {
-                    [Void]$warningLogs.Add("The recipient $($person.DisplayName) ($($account)) is not a member of the group $($permission.DisplayName) ($($permission.Reference))")
+                    [Void]$warningLogs.Add("The recipient $($person.DisplayName) ($($account)) is not a member of the group $($permissionDisplayName) ($($permission.Reference))")
                     $success = $true
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "RevokePermission"
-                            Message = "Successfully revoked permission $($permission.DisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))"
+                            Message = "Successfully revoked permission $($permissionDisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))"
                             IsError = $false
                         }
                     )
                 }
                 elseif ($_ -like "*object '$($permission.Reference)' couldn't be found*") {
-                    [Void]$warningLogs.Add("Group $($permission.DisplayName) ($($permission.Reference)) couldn't be found. Possibly no longer exists. Skipping action")
+                    [Void]$warningLogs.Add("Group $($permissionDisplayName) ($($permission.Reference)) couldn't be found. Possibly no longer exists. Skipping action")
                     $success = $true
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "RevokePermission"
-                            Message = "Successfully revoked permission $($permission.DisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))"
+                            Message = "Successfully revoked permission $($permissionDisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))"
                             IsError = $false
                         }
                     )
@@ -211,18 +212,18 @@ try {
                     $success = $true
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "RevokePermission"
-                            Message = "Successfully revoked permission $($permission.DisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))"
+                            Message = "Successfully revoked permission $($permissionDisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))"
                             IsError = $false
                         }
                     )
                 }
                 else {
                     # Log error for further analysis.  Contact Tools4ever Support to further troubleshoot
-                    [Void]$warningLogs.Add("Error revoking permission $($permission.DisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account)). Error: $_")
+                    [Void]$warningLogs.Add("Error revoking permission $($permissionDisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account)). Error: $_")
                     $success = $false
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "RevokePermission"
-                            Message = "Failed to revoke permission $($permission.DisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))"
+                            Message = "Failed to revoke permission $($permissionDisplayName) ($($permission.Reference)) from $($person.DisplayName) ($($account))"
                             IsError = $true
                         }
                     )

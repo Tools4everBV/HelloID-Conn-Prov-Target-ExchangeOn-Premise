@@ -8,6 +8,9 @@
 
 $outputContext.Success = $true
 
+# Permission definition settings
+$accessRights = @("FullAccess", "SendAs") # Options: FullAccess, SendAs, SendOnBehalf
+
 # Set debug logging
 switch ($($actionContext.Configuration.config.isDebug)) {
     $true { $VerbosePreference = 'Continue' }
@@ -167,6 +170,8 @@ try {
                 $account = $using:actionContext.References.Account
                 $permission = $using:actionContext.References.Permission
                 $person = $using:personContext.Person
+                $permissionDisplayName = $using:actionContext.PermissionDisplayName
+                $accessRightsInvoke = $using:accessRights
 
                 $success = $false
                 $auditLogs = [Collections.Generic.List[PSCustomObject]]::new()
@@ -177,39 +182,39 @@ try {
                 $warningLogs = [System.Collections.ArrayList]::new()
                 $errorLogs = [System.Collections.ArrayList]::new()
 
-                foreach ($permissiontype in $permission.Permissions) {
-                    switch ($permissiontype) {
-                        "Full Access" {
-                            [Void][Void]$verboseLogs.Add("Revoking permission FullAccess from mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
+                foreach ($accessRight in $accessRightsInvoke) {
+                    switch ($accessRight) {
+                        "FullAccess" {
+                            [Void][Void]$verboseLogs.Add("Revoking permission FullAccess from mailbox $($permissionDisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
                             # No error is thrown when user already has permission
                             $null = Remove-MailboxPermission -Identity $permission.Reference -AccessRights FullAccess -InheritanceType All -User $account -Confirm:$false -ErrorAction Stop
-                            [Void]$informationLogs.Add("Successfully revoked permission FullAccess from mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
+                            [Void]$informationLogs.Add("Successfully revoked permission FullAccess from mailbox $($permissionDisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
                             $auditLogs.Add([PSCustomObject]@{
                                     Action  = "RevokePermission"
-                                    Message = "Successfully revoked full access permission from mailbox ($($permission.DisplayName)) for user ($($person.DisplayName))"
+                                    Message = "Successfully revoked full access permission from mailbox ($($permissionDisplayName)) for user ($($person.DisplayName))"
                                     IsError = $false
                                 })
                         }
-                        "Send As" {
-                            [Void]$verboseLogs.Add("Revoking permission SendAs from mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
+                        "SendAs" {
+                            [Void]$verboseLogs.Add("Revoking permission SendAs from mailbox $($permissionDisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
                             # No error is thrown when user already has permission
                             $null = Remove-AdPermission -Identity $permission.Reference -ExtendedRights "Send As"-User $account -Confirm:$false -ErrorAction Stop
-                            [Void]$informationLogs.Add("Successfully revoked permission SendAs from mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
+                            [Void]$informationLogs.Add("Successfully revoked permission SendAs from mailbox $($permissionDisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
                             $auditLogs.Add([PSCustomObject]@{
                                     Action  = "RevokePermission"
-                                    Message = "Successfully revoked send as permission from mailbox ($($permission.DisplayName)) for user ($($person.DisplayName))"
+                                    Message = "Successfully revoked send as permission from mailbox ($($permissionDisplayName)) for user ($($person.DisplayName))"
                                     IsError = $false
                                 })
                         }
-                        "Send on Behalf" {
-                            [Void]$verboseLogs.Add("Revoking permission SendonBehalf from mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
+                        "SendonBehalf" {
+                            [Void]$verboseLogs.Add("Revoking permission SendonBehalf from mailbox $($permissionDisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
                             # No error is thrown when user already has permission
                             # Can only be assigned to mailbox (so just  a user account isn't sufficient, there has to be a mailbox for the user)
                             $null = Set-Mailbox -Identity $permission.Reference -GrantSendOnBehalfTo @{remove = "$($account)" } -Confirm:$false -ErrorAction Stop
-                            [Void]$informationLogs.Add("Successfully revoked permission SendonBehalf from mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
+                            [Void]$informationLogs.Add("Successfully revoked permission SendonBehalf from mailbox $($permissionDisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
                             $auditLogs.Add([PSCustomObject]@{
                                     Action  = "RevokePermission"
-                                    Message = "Successfully revoked send on behalf permission from mailbox ($($permission.DisplayName)) for user ($($person.DisplayName))"
+                                    Message = "Successfully revoked send on behalf permission from mailbox ($($permissionDisplayName)) for user ($($person.DisplayName))"
                                     IsError = $false
                                 })
                         }
@@ -218,18 +223,18 @@ try {
                 $success = $true
                 $auditLogs.Add([PSCustomObject]@{
                         Action  = "RevokePermission"
-                        Message = "Successfully revoked permission $($permission.Permissions -join " & ") from mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))"
+                        Message = "Successfully revoked permission $($permission.Permissions -join " & ") from mailbox $($permissionDisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))"
                         IsError = $false
                     }
                 )      
             }
             catch {
                 if ($_ -like "*object '$($permission.Reference)' couldn't be found*") {
-                    [Void]$warningLogs.Add("Mailbox $($permission.DisplayName) ($($permission.Reference)) couldn't be found. Possibly no longer exists. Skipping action")
+                    [Void]$warningLogs.Add("Mailbox $($permissionDisplayName) ($($permission.Reference)) couldn't be found. Possibly no longer exists. Skipping action")
                     $success = $true
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "RevokePermission"
-                            Message = "Successfully revoked permission $($permission.Permissions -join " & ") from mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))"
+                            Message = "Successfully revoked permission $($permission.Permissions -join " & ") from mailbox $($permissionDisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))"
                             IsError = $false
                         }
                     )
@@ -239,18 +244,18 @@ try {
                     $success = $true
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "RevokePermission"
-                            Message = "Successfully revoked permission $($permission.Permissions -join " & ") from mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))"
+                            Message = "Successfully revoked permission $($permission.Permissions -join " & ") from mailbox $($permissionDisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))"
                             IsError = $false
                         }
                     )
                 }
                 else {
                     # Log error for further analysis.  Contact Tools4ever Support to further troubleshoot
-                    [Void]$warningLogs.Add("Error revoking permission $($permission.Permissions -join " & ") from mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account)). Error: $_")
+                    [Void]$warningLogs.Add("Error revoking permission $($permission.Permissions -join " & ") from mailbox $($permissionDisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account)). Error: $_")
                     $success = $false
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "RevokePermission"
-                            Message = "Failed to grant permission $($permission.Permissions -join " & ") from mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))"
+                            Message = "Failed to grant permission $($permission.Permissions -join " & ") from mailbox $($permissionDisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))"
                             IsError = $true
                         }
                     )

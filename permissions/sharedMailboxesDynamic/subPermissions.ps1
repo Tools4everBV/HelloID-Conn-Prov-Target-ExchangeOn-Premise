@@ -253,8 +253,8 @@ try {
                     # Grant Exchange Mailbox permission
                     $addExchangeMailboxPermission = Invoke-Command -Session $remoteSession -ScriptBlock {
                         $account = $using:actionContext.References.Account
-                        $person = $using:personContext.Person
                         $permission = $using:permission
+                        $person = $using:personContext.Person
                         $permissionSuccess = $false
                         $AutoMapping = $true
                         
@@ -452,8 +452,8 @@ try {
                     $removeExchangeMailboxPermission = Invoke-Command -Session $remoteSession -ScriptBlock {
                         try {
                             $account = $using:actionContext.References.Account
-                            $person = $using:personContext.Person
                             $permission = $using:permission
+                            $person = $using:personContext.Person
                         
                             $permissionSuccess = $false
                             $success = $false

@@ -167,6 +167,7 @@ try {
                 $account = $using:actionContext.References.Account
                 $permission = $using:actionContext.References.Permission
                 $person = $using:personContext.Person
+                $permissionDisplayName = $using:actionContext.PermissionDisplayName
 
                 $success = $false
                 $auditLogs = [Collections.Generic.List[PSCustomObject]]::new()
@@ -177,35 +178,35 @@ try {
                 $warningLogs = [System.Collections.ArrayList]::new()
                 $errorLogs = [System.Collections.ArrayList]::new()
 
-                [Void]$verboseLogs.Add("Granting permission $($permission.DisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))")
+                [Void]$verboseLogs.Add("Granting permission $($permissionDisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))")
                 $null = Add-DistributionGroupMember -Identity $permission.Reference -Member $account -BypassSecurityGroupManagerCheck:$true -Confirm:$false -ErrorAction Stop
-                [Void]$informationLogs.Add("Successfully granted permission $($permission.DisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))")
+                [Void]$informationLogs.Add("Successfully granted permission $($permissionDisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))")
 
                 $success = $true
                 $auditLogs.Add([PSCustomObject]@{
                         Action  = "GrantPermission"
-                        Message = "Successfully granted permission $($permission.DisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))"
+                        Message = "Successfully granted permission $($permissionDisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))"
                         IsError = $false
                     }
                 )      
             }
             catch {
                 if ($_ -like "*already present in the collection*") {
-                    [Void]$warningLogs.Add("The recipient $($person.DisplayName) ($($account)) is already a member of the group $($permission.DisplayName) ($($permission.Reference))")
+                    [Void]$warningLogs.Add("The recipient $($person.DisplayName) ($($account)) is already a member of the group $($permissionDisplayName) ($($permission.Reference))")
                     $success = $true
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "GrantPermission"
-                            Message = "Successfully granted permission $($permission.DisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))"
+                            Message = "Successfully granted permission $($permissionDisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))"
                             IsError = $false
                         }
                     )
                 }
                 elseif ($_ -like "*object '$($permission.Reference)' couldn't be found*") {
-                    [Void]$warningLogs.Add("Group $($permission.DisplayName) ($($permission.Reference)) couldn't be found. Possibly no longer exists. Skipping action")
+                    [Void]$warningLogs.Add("Group $($permissionDisplayName) ($($permission.Reference)) couldn't be found. Possibly no longer exists. Skipping action")
                     $success = $true
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "GrantPermission"
-                            Message = "Successfully granted permission $($permission.DisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))"
+                            Message = "Successfully granted permission $($permissionDisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))"
                             IsError = $false
                         }
                     )
@@ -215,18 +216,18 @@ try {
                     $success = $true
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "GrantPermission"
-                            Message = "Successfully granted permission $($permission.DisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))"
+                            Message = "Successfully granted permission $($permissionDisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))"
                             IsError = $false
                         }
                     )
                 }
                 else {
                     # Log error for further analysis.  Contact Tools4ever Support to further troubleshoot
-                    [Void]$warningLogs.Add("Error granting permission $($permission.DisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account)). Error: $_")
+                    [Void]$warningLogs.Add("Error granting permission $($permissionDisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account)). Error: $_")
                     $success = $false
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "GrantPermission"
-                            Message = "Failed to grant permission $($permission.DisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))"
+                            Message = "Failed to grant permission $($permissionDisplayName) ($($permission.Reference)) to $($person.DisplayName) ($($account))"
                             IsError = $true
                         }
                     )
