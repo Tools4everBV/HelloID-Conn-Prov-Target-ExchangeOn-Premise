@@ -9,7 +9,6 @@ $outputContext.Permissions.Add(
         Identification = @{
             DisplayName = "Department Mailbox"
             Reference   = "DMBX"
-            Permissions = @("Full Access", "Send As"); # Options:  Full Access,Send As, Send on Behalf
         }
     }
 );

@@ -206,17 +206,12 @@ try {
 
                 if ($user -eq $null) { throw "Failed to return a user" }
 
-                $aRef = @{
-                    Guid              = $user.Guid
-                    UserPrincipalName = $user.UserPrincipalName
-                }
-
-                [Void]$informationLogs.Add("Account correlated to $($aRef.userPrincipalName) ($($aRef.Guid))")
+                    [Void]$informationLogs.Add("Account correlated to $($user.UserPrincipalName) ($($user.Guid))")
 
                 $success = $true;
                 $auditLogs.Add([PSCustomObject]@{
                         Action  = "CreateAccount"
-                        Message = "Account correlated to $($aRef.userPrincipalName) ($($aRef.Guid))";
+                        Message = "Account correlated to $($user.UserPrincipalName) ($($user.Guid))";
                         IsError = $false;
                     });
             }
@@ -226,7 +221,7 @@ try {
             finally {
                 $returnobject = @{
                     user            = $user
-                    aRef            = $aRef
+                    aRef            = $user.Guid
                     success         = $success
                     auditLogs       = $auditLogs
                     verboseLogs     = $verboseLogs

@@ -166,6 +166,7 @@ try {
             try {
                 $account = $using:actionContext.References.Account
                 $permission = $using:actionContext.References.Permission
+                $person = $using:personContext.Person
                 $AutoMapping = $true
                 
                 $success = $false
@@ -180,36 +181,36 @@ try {
                 foreach ($permissiontype in $permission.Permissions) {
                     switch ($permissiontype) {
                         "Full Access" {
-                            [Void][Void]$verboseLogs.Add("Granting permission FullAccess to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($account.UserPrincipalName) ($($account.Guid))")
+                            [Void][Void]$verboseLogs.Add("Granting permission FullAccess to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
                             # No error is thrown when user already has permission
-                            $null = Add-MailboxPermission -Identity $permission.Reference -AccessRights FullAccess -InheritanceType All -AutoMapping $AutoMapping -User $account.Guid -ErrorAction Stop
-                            [Void]$informationLogs.Add("Successfully granted permission FullAccess to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($account.UserPrincipalName) ($($account.Guid))")
+                            $null = Add-MailboxPermission -Identity $permission.Reference -AccessRights FullAccess -InheritanceType All -AutoMapping $AutoMapping -User $account -ErrorAction Stop
+                            [Void]$informationLogs.Add("Successfully granted permission FullAccess to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
                             $auditLogs.Add([PSCustomObject]@{
                                     Action  = "GrantPermission"
-                                    Message = "Successfully set full access permission to mailbox ($($permission.DisplayName)) for user ($($account.UserPrincipalName))"
+                                    Message = "Successfully set full access permission to mailbox ($($permission.DisplayName)) for user ($($person.DisplayName))"
                                     IsError = $false
                                 })
                         }
                         "Send As" {
-                            [Void]$verboseLogs.Add("Granting permission SendAs to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($account.UserPrincipalName) ($($account.Guid))")
+                            [Void]$verboseLogs.Add("Granting permission SendAs to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
                             # No error is thrown when user already has permission
-                            $null = Add-AdPermission -Identity $permission.Reference -ExtendedRights "Send As"-User $account.Guid -Confirm:$false -ErrorAction Stop
-                            [Void]$informationLogs.Add("Successfully granted permission SendAs to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($account.UserPrincipalName) ($($account.Guid))")
+                            $null = Add-AdPermission -Identity $permission.Reference -ExtendedRights "Send As"-User $account -Confirm:$false -ErrorAction Stop
+                            [Void]$informationLogs.Add("Successfully granted permission SendAs to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
                             $auditLogs.Add([PSCustomObject]@{
                                     Action  = "GrantPermission"
-                                    Message = "Successfully set send as permission to mailbox ($($permission.DisplayName)) for user ($($account.UserPrincipalName))"
+                                    Message = "Successfully set send as permission to mailbox ($($permission.DisplayName)) for user ($($person.DisplayName))"
                                     IsError = $false
                                 })
                         }
                         "Send on Behalf" {
-                            [Void]$verboseLogs.Add("Granting permission SendonBehalf to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($account.UserPrincipalName) ($($account.Guid))")
+                            [Void]$verboseLogs.Add("Granting permission SendonBehalf to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
                             # No error is thrown when user already has permission
                             # Can only be assigned to mailbox (so just  a user account isn't sufficient, there has to be a mailbox for the user)
-                            $null = Set-Mailbox -Identity $permission.Reference -GrantSendOnBehalfTo @{add = "$($account.Guid)" } -Confirm:$false -ErrorAction Stop
-                            [Void]$informationLogs.Add("Successfully granted permission SendonBehalf to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($account.UserPrincipalName) ($($account.Guid))")
+                            $null = Set-Mailbox -Identity $permission.Reference -GrantSendOnBehalfTo @{add = "$($account)" } -Confirm:$false -ErrorAction Stop
+                            [Void]$informationLogs.Add("Successfully granted permission SendonBehalf to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))")
                             $auditLogs.Add([PSCustomObject]@{
                                     Action  = "GrantPermission"
-                                    Message = "Successfully set send on behalf permission to mailbox ($($permission.DisplayName)) for user ($($account.UserPrincipalName))"
+                                    Message = "Successfully set send on behalf permission to mailbox ($($permission.DisplayName)) for user ($($person.DisplayName))"
                                     IsError = $false
                                 })
                         }
@@ -218,7 +219,7 @@ try {
                 $success = $true
                 $auditLogs.Add([PSCustomObject]@{
                         Action  = "GrantPermission"
-                        Message = "Successfully granted permission $($permission.Permissions -join " & ") to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($account.UserPrincipalName) ($($account.Guid))"
+                        Message = "Successfully granted permission $($permission.Permissions -join " & ") to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))"
                         IsError = $false
                     }
                 )      
@@ -229,28 +230,28 @@ try {
                     $success = $true
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "GrantPermission"
-                            Message = "Successfully granted permission $($permission.Permissions -join " & ") to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($account.UserPrincipalName) ($($account.Guid))"
+                            Message = "Successfully granted permission $($permission.Permissions -join " & ") to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))"
                             IsError = $false
                         }
                     )
                 }
-                elseif ($_ -like "*User or group ""$($account.Guid)"" wasn't found*") {
-                    [Void]$warningLogs.Add("User $($account.UserPrincipalName) ($($account.Guid)) couldn't be found. Possibly no longer exists. Skipping action")
+                elseif ($_ -like "*User or group ""$($account)"" wasn't found*") {
+                    [Void]$warningLogs.Add("User $($person.DisplayName) ($($account)) couldn't be found. Possibly no longer exists. Skipping action")
                     $success = $true
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "GrantPermission"
-                            Message = "Successfully granted permission $($permission.Permissions -join " & ") to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($account.UserPrincipalName) ($($account.Guid))"
+                            Message = "Successfully granted permission $($permission.Permissions -join " & ") to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))"
                             IsError = $false
                         }
                     )
                 }
                 else {
                     # Log error for further analysis.  Contact Tools4ever Support to further troubleshoot
-                    [Void]$warningLogs.Add("Error granting permission $($permission.Permissions -join " & ") to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($account.UserPrincipalName) ($($account.Guid)). Error: $_")
+                    [Void]$warningLogs.Add("Error granting permission $($permission.Permissions -join " & ") to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account)). Error: $_")
                     $success = $false
                     $auditLogs.Add([PSCustomObject]@{
                             Action  = "GrantPermission"
-                            Message = "Failed to grant permission $($permission.Permissions -join " & ") to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($account.UserPrincipalName) ($($account.Guid))"
+                            Message = "Failed to grant permission $($permission.Permissions -join " & ") to mailbox $($permission.DisplayName) ($($permission.Reference)) for user $($person.DisplayName) ($($account))"
                             IsError = $true
                         }
                     )
