@@ -1,4 +1,5 @@
 # HelloID-Conn-Prov-Target-Exchange Server On Premises
+
 > [!IMPORTANT]
 > This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements.
 
@@ -6,106 +7,149 @@
   <img src="https://github.com/Tools4everBV/HelloID-Conn-Prov-Target-ExchangeOn-Premise/blob/main/Logo.png?raw=true">
 </p>
 
-<!-- TABLE OF CONTENTS -->
-## Table of Contents
+## Table of contents
+
 - [HelloID-Conn-Prov-Target-Exchange Server On Premises](#helloid-conn-prov-target-exchange-server-on-premises)
-  - [Table of Contents](#table-of-contents)
+  - [Table of contents](#table-of-contents)
   - [Introduction](#introduction)
-  - [Requirements](#requirements)
+  - [Supported features](#supported-features)
   - [Getting started](#getting-started)
-    - [Provisioning PowerShell V2 connector](#provisioning-powershell-v2-connector)
-      - [Correlation configuration](#correlation-configuration)
-      - [Field mapping](#field-mapping)
-      - [Configuring Exchange Management Shell](#configuring-exchange-management-shell)
-      - [Connection settings](#connection-settings)
+    - [HelloID Icon URL](#helloid-icon-url)
+    - [Requirements](#requirements)
+    - [Connection settings](#connection-settings)
+    - [Correlation configuration](#correlation-configuration)
+    - [Field mapping](#field-mapping)
+    - [Account Reference](#account-reference)
+  - [Remarks](#remarks)
+    - [Available lifecycle actions](#available-lifecycle-actions)
+    - [Exchange Management Shell](#exchange-management-shell)
+  - [Development resources](#development-resources)
+    - [API endpoints](#api-endpoints)
+    - [API documentation](#api-documentation)
   - [Getting help](#getting-help)
-  - [HelloID Docs](#helloid-docs)
+  - [HelloID docs](#helloid-docs)
 
 ## Introduction
 
-_HelloID-Conn-Prov-Target-Exchange Server On Premises_ is a _target_ connector. _Exchange Server On Premises_ provides  the option to correlate to existing Exchange On-Premise users and provision groupmemberships and sharedmailbox permissions.
-  >__Only Exchange groups are supported, if the group can be managed via AD, we advise to do so__
+_HelloID-Conn-Prov-Target-Exchange Server On Premises_ is a _target_ connector.
+_Exchange Server On Premises_ provides the option to correlate to existing Exchange users and provision Exchange group memberships and shared mailbox permissions.
 
-If you want to create Exchange On-Premise users, please use the **built-in Microsoft Active Directory target system** and make use of the **Exchange Integration**.
+> [!NOTE]
+> Only Exchange groups are supported by this connector. If a group can be managed directly by Active Directory, managing it in AD is advised.
 
-The following lifecycle actions are available:
+If you want to create Exchange On-Premises users, use the built-in Microsoft Active Directory target system with Exchange integration.
 
+## Supported features
 
-| Action                                                             | Description                                                                   |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| create.ps1                                                         | PowerShell _create_ lifecycle action                                          |
-| enable.ps1                                                         | PowerShell _enable_ lifecycle action                                          |
-| disable.ps1                                                        | PowerShell _disable_ lifecycle action                                         |
-| permissions/groups/grantPermission.ps1                             | PowerShell _grant_ lifecycle action for groups                                |
-| permissions/groups/revokePermission.ps1                            | PowerShell _revoke_ lifecycle action for groups                               |
-| permissions/groups/permissions.ps1                                 | PowerShell _permissions_ lifecycle action for groups                          |
-| permissions/sharedMailboxes/grantPermission.ps1                    | PowerShell _grant_ lifecycle action for shared mailboxes                      |
-| permissions/sharedMailboxes/revokePermission.ps1                   | PowerShell _revoke_ lifecycle action for shared mailboxes                     |
-| permissions/sharedMailboxes/permissions.ps1                        | PowerShell _permissions_ lifecycle action for shared mailboxes                |
-| permissions/sharedMailboxesDynamic/subPermissions.ps1              | PowerShell _grant_, _update_ & _revoke_ lifecycle action for shared mailboxes |
-| permissions/sharedMailboxesDynamic/permissions.ps1                 | PowerShell _permissions_ lifecycle action for shared mailboxes                |
-| resources/groups/resources.ps1                                     | PowerShell _resources_ lifecycle action for groups                            |
-| resources/sharedMailboxes/resources.ps1                            | PowerShell _resources_ lifecycle action for shared mailboxes                  |
-| configuration.json                                                 | Default _configuration.json_                                                  |
-| fieldMapping.json                                                  | Default _fieldMapping.json_                                                   |
-| correlateOnly/create.ps1                                           | PowerShell _create_ lifecycle action for only correlating                     |
-| correlateOnly/configuration.json                                   | Default _configuration.json_ for only correlating                             |
-| correlateOnly/fieldMapping.json                                    | Default _fieldMapping.json_ for only correlating                               |
-| postAdAction/postAdAction.create.DisableExchangeActiveSync_OWA.ps1 | Post-AD-action used in builtin AD-connector _create_ lifecycle action         |
+The following features are available:
 
-## Requirements
-- Execute the cmdlet **Enable-PsRemoting** on the **Exchange server** to which you want to connect.
-- Within **IIS**, under the **Exchange Back End site** for the **Powershell sub-site**, check that the authentication method **Windows Authentication** is **enabled**.
-- Permissions to manage the Exchange objects, the default AD group **Organization Management** should suffice, but please change this accordingly.
-- Required to run **On-Premises**.
-- **Concurrent sessions** in HelloID set to a **maximum of 1**! If this is any higher than 1, this may cause errors, since Exchange only support a maximum of 3 sessions per minute.
+| Feature                                   | Supported | Actions                 | Remarks           |
+| ----------------------------------------- | --------- | ----------------------- | ----------------- |
+| **Account Lifecycle**                     | ✅         | Create, Enable, Disable |                   |
+| **Permissions**                           | ✅         | Retrieve, Grant, Revoke | Static or Dynamic |
+| **Resources**                             | ✅         | Retrieve                |                   |
+| **Entitlement Import: Accounts**          | ❌         | -                       |                   |
+| **Entitlement Import: Permissions**       | ❌         | -                       |                   |
+| **Governance Reconciliation Resolutions** | ❌         | -                       |                   |
 
 ## Getting started
 
-### Provisioning PowerShell V2 connector
+### HelloID Icon URL
 
-#### Correlation configuration
+URL of the icon used for the HelloID Provisioning target system:
 
-The correlation configuration is used to specify which properties will be used to match an existing account within _Exchange Server On Premises_ to a person in _HelloID_.
+```txt
+https://raw.githubusercontent.com/Tools4everBV/HelloID-Conn-Prov-Target-ExchangeOn-Premise/refs/heads/main/Icon.png
+```
 
-To properly setup the correlation:
+### Requirements
 
-1. Open the `Correlation` tab.
+- Run **Enable-PSRemoting** on the Exchange server you want to connect to.
+- In **IIS**, under **Exchange Back End** for the **PowerShell** virtual directory, verify **Windows Authentication** is enabled.
+- Use a service account with permissions to manage Exchange objects. The default AD group **Organization Management** should generally suffice.
+- This connector is intended for **on-premises** Exchange environments.
+- Set **Concurrent sessions** in HelloID to a **maximum of 1**. Higher values can cause errors because Exchange supports a limited number of remote sessions.
 
-2. Specify the following configuration:
+### Connection settings
 
-    | Setting                   | Value                       |
-    | ------------------------- | --------------------------- |
-    | Enable correlation        | `True`                      |
-    | Person correlation field  | ``                          |
-    | Account correlation field | `Account.UserPrincipalName` |
+The following settings are required to connect.
+
+| Setting                         | Description                                                        | Mandatory |
+| ------------------------------- | ------------------------------------------------------------------ | --------- |
+| exchange.connectionUri          | The connection URL of the on-premises Exchange PowerShell endpoint | Yes       |
+| exchange.username               | The username of the Exchange service account                       | Yes       |
+| exchange.password               | The password of the Exchange service account                       | Yes       |
+| exchange.authenticationmode     | The authentication method used to authenticate the credentials     | Yes       |
+| exchange.sharedMailboxContainer | The OU where shared mailbox user objects are located               | Yes       |
+| config.IsDebug                  | Enables verbose logging for troubleshooting                        | No        |
+
+### Correlation configuration
+
+The correlation configuration is used to specify which properties are used to match an existing account within _Exchange Server On Premises_ to a person in _HelloID_.
+
+| Setting                   | Value                       |
+| ------------------------- | --------------------------- |
+| Enable correlation        | `True`                      |
+| Person correlation field  | ``                          |
+| Account correlation field | `Account.UserPrincipalName` |
 
 > [!TIP]
 > _For more information on correlation, please refer to our correlation [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems/correlation.html) pages_.
 
-#### Field mapping
+### Field mapping
 
 The field mapping can be imported by using the _fieldMapping.json_ file.
 
-#### Configuring Exchange Management Shell
-By using this connector you will have the ability to manage groupmemberships.
-Since we use the cmdlets from the Exchange Management Shell, it is required to Enable-PsRemoting on the Exchange Server, allow Windows Authentication for the IIS site and assign permissions to the service account.
-For more information, please check out the [Microsoft docs](https://docs.microsoft.com/en-us/powershell/exchange/control-remote-powershell-access-to-exchange-servers?view=exchange-ps).
+### Account Reference
 
-#### Connection settings
-The following settings are required to connect.
+The account reference is populated with the Exchange mailbox **ExchangeGuid** value.
 
-| Setting               | Description                                                                   |
-| --------------------- | ----------------------------------------------------------------------------- |
-| Connection Uri        | The connection uri of the on-prem Exchange                                    |
-| Username              | The username of the service account in Exchange                               |
-| Password              | The password of the service account in Exchange                               |
-| Authentication Method | The authentication method that is used to authenticate the user's credentials |
+## Remarks
+
+### Available lifecycle actions
+
+| Action                                                             | Description                                                                     |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| create.ps1                                                         | PowerShell _create_ lifecycle action                                            |
+| enable.ps1                                                         | PowerShell _enable_ lifecycle action                                            |
+| disable.ps1                                                        | PowerShell _disable_ lifecycle action                                           |
+| permissions/groups/grantpermission.ps1                             | PowerShell _grant_ lifecycle action for groups                                  |
+| permissions/groups/revokepermission.ps1                            | PowerShell _revoke_ lifecycle action for groups                                 |
+| permissions/groups/permissions.ps1                                 | PowerShell _permissions_ lifecycle action for groups                            |
+| permissions/sharedmailboxes/grantpermissions.ps1                   | PowerShell _grant_ lifecycle action for shared mailboxes                        |
+| permissions/sharedmailboxes/revokepermission.ps1                   | PowerShell _revoke_ lifecycle action for shared mailboxes                       |
+| permissions/sharedmailboxes/permissions.ps1                        | PowerShell _permissions_ lifecycle action for shared mailboxes                  |
+| permissions/sharedMailboxesDynamic/subPermissions.ps1              | PowerShell _grant_, _update_ and _revoke_ lifecycle action for shared mailboxes |
+| permissions/sharedMailboxesDynamic/permissions.ps1                 | PowerShell _permissions_ lifecycle action for shared mailboxes                  |
+| resources/groups/resources.ps1                                     | PowerShell _resources_ lifecycle action for groups                              |
+| resources/sharedMailboxes/resources.ps1                            | PowerShell _resources_ lifecycle action for shared mailboxes                    |
+| correlateOnly/create.ps1                                           | PowerShell _create_ lifecycle action for correlation only                       |
+| postAdAction/postAdAction.create.DisableExchangeActiveSync_OWA.ps1 | Post-AD action used in the built-in AD connector _create_ lifecycle action      |
+
+### Exchange Management Shell
+
+This connector uses cmdlets from the Exchange Management Shell for permissions and mailbox operations. Ensure remoting and authentication are configured correctly before onboarding.
+
+## Development resources
+
+### API endpoints
+
+The connector uses Exchange Remote PowerShell cmdlets instead of REST API endpoints.
+
+| Endpoint / Interface           | Method(s)          | Description                                            |
+| ------------------------------ | ------------------ | ------------------------------------------------------ |
+| Exchange Remote PowerShell     | New-PSSession      | Creates a remote session to Exchange                   |
+| Exchange cmdlets (for example) | Get/Set/Add/Remove | Retrieves and manages Exchange objects and permissions |
+
+### API documentation
+
+- Microsoft documentation for remote Exchange PowerShell access: https://learn.microsoft.com/en-us/powershell/exchange/control-remote-powershell-access-to-exchange-servers
 
 ## Getting help
-> _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/hc/en-us/articles/360012518799-How-to-add-a-target-system) pages_
 
-> _If you need help, feel free to ask questions on our [forum](https://forum.helloid.com/forum/helloid-connectors/provisioning/828-helloid-provisioning-helloid-conn-prov-target-exchange-on-premise)_
+> [!TIP]
+> _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems.html) pages_.
 
-## HelloID Docs
+## HelloID docs
+
 The official HelloID documentation can be found at: https://docs.helloid.com/

@@ -205,10 +205,9 @@ foreach ($group in $groups) {
     
     $outputContext.Permissions.Add(
         @{
-            DisplayName    = "$($groupType) - $($group.DisplayName)";
+            DisplayName    = "$($groupType) - $($group.DisplayName)"
             Identification = @{
-                Reference   = $group.Guid;
-                DisplayName = "$($groupType) - $($group.DisplayName)";        
+                Reference   = $group.Guid
             }
         })
      

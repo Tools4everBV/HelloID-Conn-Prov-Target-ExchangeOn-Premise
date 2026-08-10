@@ -193,11 +193,9 @@ $mailboxes = $getExoMailboxes.mailboxes
 foreach ($mailbox in $mailboxes) {
     $outputContext.Permissions.Add(
         @{
-            DisplayName    = "Shared Mailbox - $($mailbox.DisplayName)";
+            DisplayName    = "Shared Mailbox - $($mailbox.DisplayName)"
             Identification = @{
-                Reference   = $mailbox.Guid;
-                DisplayName = "Shared Mailbox - $($mailbox.DisplayName)";
-                Permissions = @("Full Access", "Send As"); # Options:  Full Access,Send As, Send on Behalf
+                Reference   = $mailbox.Guid
             }
         }
     )
